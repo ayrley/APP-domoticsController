@@ -30,6 +30,8 @@ public:
 	~Badge();
 	
 	uint64_t getBadgeNumber();
+
+	bool valid(uint64_t badgeToCheck);
 };
 
 #endif
