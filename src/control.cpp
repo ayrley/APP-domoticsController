@@ -18,7 +18,7 @@ std::vector<Badge *> *g_badges = new std::vector<Badge *>();
 int loadSettings()
 {
 	int ret = 0;
-	
+
 	std::stringstream userSettingsStream;
 	std::stringstream factorySettingsStream;
 
@@ -27,7 +27,7 @@ int loadSettings()
 
 	userSettingsStream << DIR_SHARED << "user.settings.domotics";
 	userSettingsStream >> userSettingsFile;
-	
+
 	factorySettingsStream << DIR_ETC << "factory.settings.domotics";
 	factorySettingsStream >> factorySettingsFile;
 
@@ -35,12 +35,12 @@ int loadSettings()
 	Settings *user;
 
 	bool settingsExist = std::filesystem::exists(userSettingsFile);
-	
+
 	g_settings->push_back(factory);
-	
+
 	if (!settingsExist)
 		std::filesystem::copy(factorySettingsFile, userSettingsFile);
-		
+
 	user = new Settings(userSettingsFile);
 
 	if (user->getType() != SET_USER) {
@@ -59,30 +59,30 @@ int loadSettings()
 int loadBadges()
 {
 	int ret = 0;
-	
+
 	std::stringstream badgesStream;
-	
+
 	std::string badgesDir;
-	
+
 	badgesStream << DIR_SHARED << "badges";
 	badgesStream >> badgesDir;
-	
+
     for (const auto & entry : std::filesystem::directory_iterator(badgesDir)) {
-    	std::string badgePath = entry.path();
-    	Badge *badge = new Badge(badgePath);
-    	g_badges->push_back(badge);   	
+		std::string badgePath = entry.path();
+		Badge *badge = new Badge(badgePath);
+		g_badges->push_back(badge);
 	}
-	
+
    	return ret;
 }
 
 int main(void)
 {
 	int ret = 0;
-	
+
 	loadSettings();
 	loadBadges();
-	
+
 	return ret;
 
 }
