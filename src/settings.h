@@ -54,6 +54,7 @@ public:
 	int version();
 	
 	Network *getNetwork();
+	std::vector<Reader *>  *getReaders();
 
 	enum settingsType getType();
 	

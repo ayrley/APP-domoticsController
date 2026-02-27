@@ -154,3 +154,7 @@ Network *Settings::getNetwork()
 	return this->m_network;
 }
 
+std::vector<Reader *> *Settings::getReaders()
+{
+	return this->m_readers;
+}
