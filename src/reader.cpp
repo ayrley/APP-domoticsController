@@ -180,13 +180,16 @@ void Reader::handleWiegandReader()
 			continue;
 
 		for (auto singleBadge : *this->m_badges) {
-			if (singleBadge->valid(badge)) {
+			validBadge = singleBadge->valid(badge);
+			if (validBadge) {
 				color = LED_GREEN;
 				continue;
 			} else {
 				color = LED_RED;
 			}
 		}
+
+		//singleBadge->takeAction(validBadge)
 
 		ledRunner = std::thread(&Reader::setWiegandLed, this, color);
 		ledRunner.detach();
@@ -222,17 +225,16 @@ void Reader::fromJson(const json &jsonObject)
 {
 	std::string tmpHelp;
 
-	this->m_readerName = jsonObject.value("name", "");
-	this->m_readerLocation = jsonObject.value("location", "");
+	this->m_readerName = jsonObject["name"];
+	this->m_readerLocation = jsonObject["location"];
 	this->m_readerLocationType = RDR_LOC_LOCAL;
 	this->m_readerType = RDR_WIEGAND;
 
-	tmpHelp = jsonObject.value("location_type", "");
+	tmpHelp = jsonObject["location_type"];
 	if (tmpHelp == "IP")
 		this->m_readerLocationType = RDR_LOC_IP;
 
-	tmpHelp = jsonObject.value("type", "");
+	tmpHelp = jsonObject["type"];
 	if (tmpHelp == "OSDP")
 		this->m_readerType = RDR_OSDP;
-
 }
