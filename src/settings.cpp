@@ -2,6 +2,7 @@
 #include <fstream>
 #include <cerrno>
 #include <iostream>
+#include <vector>
 
 #include <stdint.h>
 
@@ -11,9 +12,9 @@
 #define SETTINGS_VERSION 1
 
 Settings::Settings()
-{	
+{
 	this->m_readers = new std::vector<Reader *>();
-	this->m_settingsFile = "/etc/factory.settings.domotics";
+	this->m_settingsFile = "/etc/factory.settigetReadersngs.domotics";
 	this->m_network = new Network();
 	this->read();
 }
@@ -30,7 +31,7 @@ Settings::~Settings()
 {
 	this->settingsType = SET_NONE;
 	this->m_settingsFile = "";
-	
+
 	delete this->m_network;
 }
 
@@ -42,7 +43,7 @@ void Settings::parse()
 int Settings::setSettingsFile(std::string settingsFile)
 {
 	this->m_settingsFile = settingsFile;
-	
+
 	return 0;
 }
 
@@ -60,10 +61,10 @@ int Settings::parseSettingsType()
 
 int Settings::parseReaders()
 {
- 	for (auto &jsonReader : this->m_settings["readers"].items())
+ 	for (auto &sinlgeReader : this->m_settings["readers"].items())
 	{
 		Reader *rdr = new Reader();
-		rdr->fromJson(jsonReader);
+		rdr->fromJson(sinlgeReader.value());
 		this->m_readers->push_back(rdr);
     }    
     
@@ -77,28 +78,28 @@ int Settings::read()
 	this->m_settings = json::parse(jsonFile);
 	if (this->m_settings.is_discarded())
 		return -ENOENT;
-		
+
 	this->parseSettingsType();
-	
+
 	this->parseReaders();
-	
-	return 0;	
+
+	return 0;
 }
-	
+
 int Settings::read(std::string settingsFile)
 {
 	this->setSettingsFile(settingsFile);
-	
+
 	return this->read();
 }
 
 int Settings::write()
-{	
+{
 	std::ofstream settingsFile(this->m_settingsFile);
 	this->m_settings.clear();
 	this->setType(this->settingsType);
 	this->m_settings["version"] = SETTINGS_VERSION;
-	
+
 	this->m_settings.push_back(json::object_t::value_type("network", 
 		this->m_network->getJson()));
 
