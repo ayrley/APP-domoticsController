@@ -24,12 +24,12 @@ int IO::exportIo()
 	std::string gpioExportLocation = "";
 	std::string exportLocation = "/sys/class/gpio/export";
 	std::string gpioNumber;
-	
+
 	if (this->m_direction == IO_DIR_AIN) {
 		this->m_exported = true;
 		return 0;
 	}
-	
+
 	gpioNumber = this->m_location.substr(this->m_location.find("gpio") + 1);
 
 	fptr = open(exportLocation.c_str(), O_WRONLY);
@@ -38,18 +38,18 @@ int IO::exportIo()
 
 	write(fptr, gpioNumber.c_str(), strlen(gpioNumber.c_str()));
 	close(fptr);
-	
+
 	gpioExportLocation = this->m_location + "/direction";
 	fptr = open(gpioExportLocation.c_str(), O_WRONLY);
-	
+
 	if (this->m_direction == IO_DIR_IN)
 		write(fptr, "in" , 2);
 	else if (this->m_direction == IO_DIR_OUT)
 		write(fptr, "out" , 3);
-	
+
 	close(fptr);
-	
-	return 0;	
+
+	return 0;
 }
 
 void IO::clear()
@@ -66,7 +66,7 @@ void IO::set(bool high)
 {
 	int fptr;
 	std::string gpioValue = this->m_location + "/value";
-	
+
 	if (!this->m_exported)
 		this->exportIo();
 
@@ -83,7 +83,7 @@ int IO::getAnalogIo()
 {
 	int fptr;
 	char buffer[16] = {0};
-	
+
 	fptr = open(this->m_location.c_str(), O_RDONLY);
 	if (!fptr) 
 		return -1;
@@ -99,7 +99,7 @@ int IO::getDigitalIo()
 	int fptr;
 	char buffer[16] = {0};
 	std::string gpioValue = this->m_location + "/value";
-	
+
 	fptr = open(gpioValue.c_str(), O_RDONLY);
 	if (!fptr) 
 		return -1;
@@ -133,7 +133,7 @@ void IO::fromJson(const json &jsonObject)
 		std::cout << "name could not be found in " << jsonObject
 			<< std::endl;
 	}
-	
+
 	try {
 		this->m_location = jsonObject["location"];
 	}
@@ -142,7 +142,7 @@ void IO::fromJson(const json &jsonObject)
 		std::cout << "location could not be found in " << jsonObject
 			<< std::endl;
 	}
-	
+
 	try {
 		std::string locationType = jsonObject["type"];
 		if (locationType == "LOCAL")
@@ -155,7 +155,7 @@ void IO::fromJson(const json &jsonObject)
 		std::cout << "type could not be found in " << jsonObject
 			<< std::endl;
 	}
-	
+
 	try {
 		std::string direction = jsonObject["direction"];
 		if (direction == "AIN")
