@@ -7,7 +7,8 @@ SRCS 	:=	src/control.cpp \
 			src/settings.cpp \
 			src/accessController.cpp \
 			src/reader.cpp \
-			src/badge.cpp
+			src/badge.cpp \
+			src/io.cpp
 		
 INCS 	:= 	-I. \
 		-Isrc
