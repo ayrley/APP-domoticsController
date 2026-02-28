@@ -15,20 +15,22 @@ class Badge
 {
 private:
 	json m_badge;
-	
+
 	std::string m_badgeFile;
-	
+
 	std::string m_firstName;
 	std::string m_lastName;
-	
+
 	uint64_t m_badgeNumber;
-	
+
 	int parse();
-	
+
 public:
 	Badge(const std::string &badgeFile);
 	~Badge();
-	
+
+	void takeAction(bool accessGranted);
+
 	uint64_t getBadgeNumber();
 
 	bool valid(uint64_t badgeToCheck);

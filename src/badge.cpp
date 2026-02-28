@@ -17,6 +17,11 @@ Badge::~Badge()
 {
 }
 
+void Badge::takeAction(bool accessGranted)
+{
+
+}
+
 int Badge::parse()
 {
 	std::ifstream jsonFile(this->m_badgeFile);
@@ -51,6 +56,8 @@ int Badge::parse()
 		std::cout << "badgeNumber could not be found in " << this->m_badgeFile
 			<< std::endl;
 	}
+
+
 
 	return 0;
 }
