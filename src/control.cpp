@@ -11,17 +11,30 @@
 #include "control.h"
 #include "settings.h"
 #include "badge.h"
+#include "reader.h"
+#include "io.h"
 
 std::vector<Settings *> *g_settings = new std::vector<Settings *>();
 std::vector<Badge *> *g_badges = new std::vector<Badge *>();
+std::vector<IO *> *g_ios = new std::vector<IO *>();
+
+Settings * getSetting(enum settingsType settingType)
+{
+	for(Settings *setting : *g_settings) {
+		if (setting->getType() == settingType)
+			return setting;
+	}
+
+	std::cerr << "No settings found for type: " << settingType << std::endl;
+
+	return nullptr;
+}
 
 int loadSettings()
 {
 	int ret = 0;
-
 	std::stringstream userSettingsStream;
 	std::stringstream factorySettingsStream;
-
 	std::string userSettingsFile;
 	std::string factorySettingsFile;
 
@@ -59,9 +72,7 @@ int loadSettings()
 int loadBadges()
 {
 	int ret = 0;
-
 	std::stringstream badgesStream;
-
 	std::string badgesDir;
 
 	badgesStream << DIR_SHARED << "badges";
@@ -76,12 +87,51 @@ int loadBadges()
    	return ret;
 }
 
+int loadIos()
+{
+	int ret = 0;
+	std::stringstream iosStream;
+	std::string iosDir;
+
+	iosStream << DIR_SHARED << "ios";
+	iosStream >> iosDir;
+
+    for (const auto & entry : std::filesystem::directory_iterator(iosDir)) {
+		json ioFileObject;
+		std::ifstream jsonFile(entry.path());
+		ioFileObject = json::parse(jsonFile);
+
+		for (auto &singleIo : ioFileObject["IOs"].items())
+		{
+			IO *io = new IO();
+			io->fromJson(singleIo.value());
+			g_ios->push_back(io);
+		}
+	}
+
+   	return ret;
+}
+
+int startReaders()
+{
+	int ret = 0;
+	Settings *userSetting = getSetting(SET_USER);
+
+	for (auto singleReader : *userSetting->getReaders()){
+		singleReader->start();
+	}
+
+   	return ret;
+}
+
 int main(void)
 {
 	int ret = 0;
 
 	loadSettings();
 	loadBadges();
+	loadIos();
+	startReaders();
 
 	return ret;
 
