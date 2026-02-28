@@ -23,29 +23,29 @@ enum ioDirection {
 
 class IO
 {
-private:	
+private:
 	std::string m_name;
 	std::string m_location;
 	std::string m_fullLocation;
-	
+
 	enum ioLocationType m_locationType;
 	enum ioDirection m_direction;
 
 	bool m_exported;
-	
+
 	int exportIo();
 	int getDigitalIo();
 	int getAnalogIo();
-	
+
 public:
 	IO();
 	~IO();
-	
+
 	void fromJson(const json &jsonObject);
 	void clear();
 	void set();
 	void set(bool high);
-	
+
 	int get();
 };
 

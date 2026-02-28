@@ -3,6 +3,7 @@
 
 #include <string>
 #include <mutex>
+#include <vector>
 
 #include <stdint.h>
 
@@ -31,36 +32,36 @@ private:
 	std::mutex m_mtx;
 
 	enum settingsType settingsType;
-	
+
 	int parseSettingsType();
 	int parseReaders();
 
 	Network *m_network;
-	
+
 	std::vector<Reader *> *m_readers;
 
 public:
 	Settings();
 	Settings(std::string settingsFile);
 	~Settings();
-	
+
 	int setSettingsFile(std::string settingsFile);
-	
+
 	int read();
 	int read(std::string settingsFile);
 	int write();
 	int write(std::string settingsFile);
-	
+
 	int version();
-	
+
 	Network *getNetwork();
-	std::vector<Reader *>  *getReaders();
+	std::vector<Reader *> *getReaders();
 
 	enum settingsType getType();
-	
+
 	void setType(enum settingsType);
 	void parse();
-	
+
 	json getFromSettings(const std::string &key);
 
 };

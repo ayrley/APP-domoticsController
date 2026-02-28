@@ -35,7 +35,7 @@ json Network::getJson()
 	object += json::object_t::value_type("dns1", this->m_dns1);
 	object += json::object_t::value_type("dns2", this->m_dns2);
 	object += json::object_t::value_type("dhcp", this->m_dhcp);
-	
+
 	return object;
 }
 
@@ -65,7 +65,7 @@ void Network::save()
 		interfacesFp << this->m_dns2;
 
 	interfacesFp << std::endl;
-	
+
 	if (this->m_dhcp) {
 		interfacesFp << std::endl;
 		interfacesFp << ETH_FALLBACK << std::endl;

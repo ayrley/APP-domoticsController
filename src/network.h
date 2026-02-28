@@ -33,13 +33,13 @@ private:
 	std::string m_ipAddress;
 	std::string m_netmask;
 	std::string m_gateway;
-	
+
 public:
 	Network();
 	~Network();
-	
+
 	void save();
-	
+
 	void fromJson(const json &jsonObject);
 	json getJson();
 
@@ -49,7 +49,7 @@ public:
 	void setGateway(const std::string &gateway);
 	void setIpAddress(const std::string &ipAddress);
 	void setNetmask(const std::string &netmask);
-	
+
 	bool getDhcp();
 };
 
