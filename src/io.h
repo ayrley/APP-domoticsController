@@ -41,6 +41,8 @@ public:
 	IO();
 	~IO();
 
+	std::string getName() { return this->m_name; }
+
 	void fromJson(const json &jsonObject);
 	void clear();
 	void set();
