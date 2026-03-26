@@ -21,25 +21,7 @@
 					"output" : "out_bel"
 				}
     		],
-    		denied" : [
-				{
-					"output_type" : "gpio",
-					"output" : "out_bel"
-				}
-    		]
-    	},
-    	{
-    		"name": "wiegand",
-    		"location" : "/dev/idtreader_2",
-    		"location_type": "LOCAL",
-    		"type" : "WIEGAND",
-    		"granted" : [
-				{
-					"output_type" : "gpio",
-					"output" : "out_bel"
-				}
-    		],
-    		denied" : [
+    		"denied" : [
 				{
 					"output_type" : "gpio",
 					"output" : "out_bel"
