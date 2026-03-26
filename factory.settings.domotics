@@ -14,13 +14,50 @@
     		"name": "wiegand",
     		"location" : "/dev/idtreader_1",
     		"location_type": "LOCAL",
-    		"type" : "WIEGAND"
+    		"type" : "WIEGAND",
+    		"granted" : [
+				{
+					"output_type" : "gpio",
+					"output" : "out_bel"
+				}
+    		],
+    		denied" : [
+				{
+					"output_type" : "gpio",
+					"output" : "out_bel"
+				}
+    		]
     	},
     	{
     		"name": "wiegand",
     		"location" : "/dev/idtreader_2",
     		"location_type": "LOCAL",
-    		"type" : "WIEGAND"
+    		"type" : "WIEGAND",
+    		"granted" : [
+				{
+					"output_type" : "gpio",
+					"output" : "out_bel"
+				}
+    		],
+    		denied" : [
+				{
+					"output_type" : "gpio",
+					"output" : "out_bel"
+				}
+    		]
+    	}
+    ],
+    "actions" : [
+    	{
+    		"name" : "Bel",
+    		"input_type" : "gpio",
+    		"input" : "in_bel",
+    		"outputs" : [
+				{
+					"output_type" : "gpio",
+					"output" : "out_bel"
+				}
+    		]
     	}
     ]
 }

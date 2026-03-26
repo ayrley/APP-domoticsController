@@ -76,7 +76,6 @@ void IO::set(bool high)
 
 	write(fptr, high ? "1" : "0", 1);
 	close(fptr);
-
 }
 
 int IO::getAnalogIo()

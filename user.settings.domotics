@@ -1,0 +1,12 @@
+{
+    "network": {
+        "dhcp": true,
+        "dns1": "",
+        "dns2": "",
+        "gateway": "",
+        "ipAddress": "",
+        "netmask": ""
+    },
+    "type": "USER",
+    "version": 1
+}

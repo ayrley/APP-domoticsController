@@ -1,0 +1,17 @@
+{
+  "IOs": [
+    {
+      "type": "LOCAL",
+      "direction": "AIN",
+      "name": "in_bel",
+      "flank" : "UP",
+      "location": "adc0"
+    },
+    {
+      "type": "LOCAL",
+      "direction": "OUT",
+      "name": "out_bel",
+   	  "location": "/sys/class/gpio5"
+    }
+  ]
+}
