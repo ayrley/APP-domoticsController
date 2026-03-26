@@ -189,8 +189,6 @@ void Reader::handleWiegandReader()
 			}
 		}
 
-		//singleBadge->takeAction(validBadge)
-
 		ledRunner = std::thread(&Reader::setWiegandLed, this, color);
 		ledRunner.detach();
 	}
@@ -237,4 +235,7 @@ void Reader::fromJson(const json &jsonObject)
 	tmpHelp = jsonObject["type"];
 	if (tmpHelp == "OSDP")
 		this->m_readerType = RDR_OSDP;
+
+	if (jsonObject.contains("granted")) {
+	}
 }
