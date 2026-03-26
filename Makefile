@@ -2,18 +2,12 @@ NAME := control
 VERSION := 0.1
 DISTNAME := $(NAME)-$(VERSION)
  
-SRCS 	:=	src/control.cpp \
-			src/network.cpp \
-			src/settings.cpp \
-			src/accessController.cpp \
-			src/reader.cpp \
-			src/badge.cpp \
-			src/io.cpp
+SRCS	:= $(wildcard src/*.cpp)
 		
 INCS 	:= 	-I. \
 		-Isrc
 	 	
-LIBS	:= 	
+LIBS	:= 
 
 LIBDIR	:= 	-L$(HOST_DIR)/usr/lib \
 		-L$(TARGET_DIR)/usr/lib
