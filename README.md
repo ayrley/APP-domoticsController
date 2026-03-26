@@ -2,6 +2,8 @@
 
 `domoticsController` is a small C++ application for domotics/home-automation control logic. It loads settings, I/O definitions, badges, and readers from local configuration files and starts the configured reader handlers.
 
+It can be run on any target, as long as every GPIO, wiegandport or serial port is defined in the correct json files.
+
 ## Build with CMake
 
 ### Requirements
