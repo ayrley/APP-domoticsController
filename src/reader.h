@@ -11,6 +11,7 @@
 
 #include "badge.h"
 #include "io.h"
+#include "action.h"
 
 using json = nlohmann::json;
 
@@ -44,8 +45,8 @@ private:
 	int m_ledPassedTime;
 
 	std::vector<Badge *> *m_badges;
-	std::vector<IO *> *m_grantedActions;
-	std::vector<IO *> *m_deniedActions;
+	Action m_grantedAction;
+	Action m_deniedAction;
 
 	readerLocationType m_readerLocationType;
 

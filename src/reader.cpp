@@ -12,6 +12,7 @@
 
 #include "reader.h"
 #include "badge.h"
+#include "action.h"
 
 Reader::Reader()
 {
@@ -188,6 +189,10 @@ void Reader::handleWiegandReader()
 				color = LED_RED;
 			}
 		}
+		if (validBadge)
+			this->m_grantedAction.execute();
+		else
+			this->m_deniedAction.execute();
 
 		ledRunner = std::thread(&Reader::setWiegandLed, this, color);
 		ledRunner.detach();
@@ -237,5 +242,10 @@ void Reader::fromJson(const json &jsonObject)
 		this->m_readerType = RDR_OSDP;
 
 	if (jsonObject.contains("granted")) {
+		for (const auto& actionJson : jsonObject["granted"].items()) {
+			Action action;
+			action.fromJson(actionJson.value());
+			this->m_grantedAction = action;
+		}
 	}
 }
