@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "io.h"
+#include "actionIo.h"
 
 enum InputType {
     IN_GPIO = 0,
@@ -16,13 +17,13 @@ class Action
 {
 private:
     IO m_input;
-    std::vector<IO> m_outputs;
+    std::vector<ActionIo> m_outputs;
 
     std::string m_name;
 
     enum InputType m_inputType;
     
-    void executeSingle(IO io);
+    void executeSingle(ActionIo io);
 
 public:
     Action();

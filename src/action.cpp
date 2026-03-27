@@ -6,6 +6,7 @@
 
 #include "action.h"
 #include "io.h"
+#include "actionIo.h"
 
 extern std::vector<IO *> *g_ios;
 
@@ -54,8 +55,15 @@ void Action::fromJson(const json &jsonObject)
         if (jsonObject["outputs"]) {
             for (auto &singleOutput : jsonObject["outputs"].items()) {
                 for (IO *io : *g_ios) {
-                    if (io->getName() == singleOutput.value())
-                        this->m_outputs.push_back(*io);
+                    if (io->getName() == singleOutput.value()) {
+                        ActionIo *actionIo = new ActionIo(io);
+
+                        if (actionIo && singleOutput.value().contains("duration")) {
+                            actionIo->setDuration(singleOutput.value()["duration"]);
+                        }
+
+                        this->m_outputs.push_back(*actionIo);
+                    }
                 }
             }
         }
@@ -67,12 +75,14 @@ void Action::fromJson(const json &jsonObject)
     
 }
 
-void Action::executeSingle(IO io)
+void Action::executeSingle(ActionIo io)
 {
-    io.set();
+    IO *ioPtr = io.getIo();
+    ioPtr->set();
+
     if (io.getDuration() > 0) {
         std::this_thread::sleep_for(std::chrono::milliseconds(io.getDuration()));
-        io.clear();
+        ioPtr->clear();
     }
 }
 
