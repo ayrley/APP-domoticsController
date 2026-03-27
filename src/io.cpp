@@ -169,4 +169,14 @@ void IO::fromJson(const json &jsonObject)
 		std::cout << "direction could not be found in " << jsonObject
 			<< std::endl;
 	}
+
+	try{
+		this->m_duration = jsonObject["duration"];
+	}
+	catch(const std::exception& e) {
+		this->m_duration = 0;
+		std::cout << "duration could not be found in " << jsonObject
+			<< std::endl;
+	}
+
 }
