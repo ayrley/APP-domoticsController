@@ -17,6 +17,7 @@
 std::vector<Settings *> *g_settings = new std::vector<Settings *>();
 std::vector<Badge *> *g_badges = new std::vector<Badge *>();
 std::vector<IO *> *g_ios = new std::vector<IO *>();
+std::vector<Action *> *g_actions = new std::vector<Action *>();
 
 Settings * getSetting(enum settingsType settingType)
 {
@@ -124,14 +125,36 @@ int startReaders()
    	return ret;
 }
 
+int startActions()
+{
+	int ret = 0;
+	Settings *userSetting = getSetting(SET_USER);
+
+	for (auto singleAction : *userSetting->getActions()){
+		singleAction->start();
+	}
+
+   	return ret;
+}
+
 int main(void)
 {
 	int ret = 0;
 
-	loadSettings();
-	loadBadges();
 	loadIos();
+	std::cout << "IOs loaded..." << std::endl;
+
+	loadBadges();
+	std::cout << "Badges loaded..." << std::endl;
+
+	loadSettings();
+	std::cout << "Settings loaded..." << std::endl;
+
 	startReaders();
+	std::cout << "Readers started..." << std::endl;	
+
+	startActions();
+	std::cout << "Actions started..." << std::endl;
 
 	return ret;
 

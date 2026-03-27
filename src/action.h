@@ -17,19 +17,25 @@ class Action
 {
 private:
     IO m_input;
+    
     std::vector<ActionIo> m_outputs;
 
     std::string m_name;
 
+    std::thread m_runner;
+
     enum InputType m_inputType;
-    
+
     void executeSingle(ActionIo io);
+    void run();
 
 public:
     Action();
 
     void fromJson(const json &jsonObject);
     void execute();;
+
+    void start();
 };
 
 #endif 

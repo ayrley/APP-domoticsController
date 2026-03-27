@@ -22,4 +22,3 @@ $(NAME)-linter:
 	clang-tidy $(SRCS) -- $(INCS) > clang-tidy-output.txt 2>&1
 
 dist: Makefile $(NAME) 
-

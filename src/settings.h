@@ -35,10 +35,12 @@ private:
 
 	int parseSettingsType();
 	int parseReaders();
+	int parseActions();
 
 	Network *m_network;
 
 	std::vector<Reader *> *m_readers;
+	std::vector<Action *> *m_actions;
 
 public:
 	Settings();
@@ -56,6 +58,7 @@ public:
 
 	Network *getNetwork();
 	std::vector<Reader *> *getReaders();
+	std::vector<Action *> *getActions();
 
 	enum settingsType getType();
 

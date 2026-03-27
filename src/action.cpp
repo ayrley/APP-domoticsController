@@ -45,39 +45,37 @@ void Action::fromJson(const json &jsonObject)
             }
         }
     }
-    catch(const std::exception& e)
-    {
+    catch(const std::exception& e) {
         std::cerr << e.what() << '\n';
     }
 
     try
     {
-        if (jsonObject["outputs"]) {
+        if (jsonObject.contains("outputs")) {
             for (auto &singleOutput : jsonObject["outputs"].items()) {
                 for (IO *io : *g_ios) {
-                    if (io->getName() == singleOutput.value()) {
-                        ActionIo *actionIo = new ActionIo(io);
+                    if (io->getName() == singleOutput.value()["output"]) {
+                        ActionIo actionIo(io);
 
-                        if (actionIo && singleOutput.value().contains("duration")) {
-                            actionIo->setDuration(singleOutput.value()["duration"]);
+                        if (singleOutput.value().contains("duration")) {
+                            actionIo.setDuration(singleOutput.value()["duration"]);
                         }
-
-                        this->m_outputs.push_back(*actionIo);
+                        this->m_outputs.push_back(actionIo);
                     }
                 }
             }
         }
     }
-    catch(const std::exception& e)
-    {
+    catch(const std::exception& e) {
         std::cerr << e.what() << '\n';
     }
-    
+    std::cout << "done" << std::endl;
+
 }
 
 void Action::executeSingle(ActionIo io)
 {
-    IO *ioPtr = io.getIo();
+    IO *ioPtr = io.getIo();    
     ioPtr->set();
 
     if (io.getDuration() > 0) {
@@ -95,4 +93,20 @@ void Action::execute()
         actionRunner = std::thread(&Action::executeSingle, this, singleIo);
         actionRunner.detach();
     }
+}
+
+void Action::run()
+{
+    while (1)
+    {
+        if (this->m_input.get())
+            this->execute();
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    }
+}
+void Action::start()
+{
+	this->m_runner = std::thread(&Action::run, this);
+	this->m_runner.detach();
 }

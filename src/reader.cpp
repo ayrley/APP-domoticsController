@@ -190,9 +190,9 @@ void Reader::handleWiegandReader()
 			}
 		}
 		if (validBadge)
-			this->m_grantedAction.execute();
+			this->m_grantedAction->execute();
 		else
-			this->m_deniedAction.execute();
+			this->m_deniedAction->execute();
 
 		ledRunner = std::thread(&Reader::setWiegandLed, this, color);
 		ledRunner.detach();
@@ -243,9 +243,17 @@ void Reader::fromJson(const json &jsonObject)
 
 	if (jsonObject.contains("granted")) {
 		for (const auto& actionJson : jsonObject["granted"].items()) {
-			Action action;
-			action.fromJson(actionJson.value());
-			this->m_grantedAction = action;
+			Action *grantedAction = new Action();
+			grantedAction->fromJson(actionJson.value());
+			this->m_grantedAction = grantedAction;
+		}
+	}
+
+	if (jsonObject.contains("denied")) {
+		for (const auto& actionJson : jsonObject["denied"].items()) {
+			Action *deniedAction = new Action();
+			deniedAction->fromJson(actionJson.value());
+			this->m_deniedAction = deniedAction;
 		}
 	}
 }

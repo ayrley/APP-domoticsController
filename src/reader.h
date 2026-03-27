@@ -45,8 +45,8 @@ private:
 	int m_ledPassedTime;
 
 	std::vector<Badge *> *m_badges;
-	Action m_grantedAction;
-	Action m_deniedAction;
+	Action *m_grantedAction;
+	Action *m_deniedAction;
 
 	readerLocationType m_readerLocationType;
 

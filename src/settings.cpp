@@ -71,6 +71,19 @@ int Settings::parseReaders()
     return 0;
 }
 
+int Settings::parseActions()
+{
+ 	for (auto &singleAction : this->m_settings["actions"].items())
+	{
+		Action *action = new Action();
+		std::cout << "Parsing action: " << singleAction.value() << std::endl;
+		action->fromJson(singleAction.value());
+		this->m_actions->push_back(action);
+	}    
+	
+	return 0;
+}
+
 int Settings::read()
 {
 	std::ifstream jsonFile(this->m_settingsFile);
@@ -80,8 +93,9 @@ int Settings::read()
 		return -ENOENT;
 
 	this->parseSettingsType();
-
 	this->parseReaders();
+	this->parseActions();
+	std::cout << "    Actions parsed ..." << std::endl;
 
 	return 0;
 }
@@ -158,4 +172,9 @@ Network *Settings::getNetwork()
 std::vector<Reader *> *Settings::getReaders()
 {
 	return this->m_readers;
+}
+
+std::vector<Action *> *Settings::getActions()
+{
+	return this->m_actions;
 }
