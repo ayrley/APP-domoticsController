@@ -15,18 +15,26 @@
     		"location" : "/dev/idtreader_1",
     		"location_type": "LOCAL",
     		"type" : "WIEGAND",
-    		"granted" : [
-				{
-					"output_type" : "gpio",
-					"output" : "out_bel"
-				}
-    		],
-    		"denied" : [
-				{
-					"output_type" : "gpio",
-					"output" : "out_bel"
-				}
-    		]
+    		"granted" : {
+				"name" : "AccessGranted",
+				"outputs" : [
+					{
+						"output_type" : "gpio",
+						"output" : "out_green",
+						"duration": 1000
+					}
+    			]
+			},
+    		"denied" : {
+				"name" : "AccessDenied",
+				"outputs" : [
+					{
+						"output_type" : "gpio",
+						"output" : "out_red",
+						"duration": 1000
+					}
+    			]
+			}
     	}
     ],
     "actions" : [
@@ -37,7 +45,8 @@
     		"outputs" : [
 				{
 					"output_type" : "gpio",
-					"output" : "out_bel"
+					"output" : "out_bel",
+					"duration": 1000
 				}
     		]
     	}
