@@ -32,7 +32,6 @@ private:
 	enum ioDirection m_direction;
 
 	bool m_exported;
-	int m_duration;
 
 	int exportIo();
 	int getDigitalIo();
@@ -50,7 +49,6 @@ public:
 	void set(bool high);
 
 	int get();
-	int getDuration() { return this->m_duration; }
 };
 
 #endif
