@@ -22,6 +22,8 @@ private:
 
     enum InputType m_inputType;
     
+    void executeSingle(IO io);
+
 public:
     Action();
 

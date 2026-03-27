@@ -1,5 +1,11 @@
-#include "action.h"
 #include <iostream>
+#include <thread>
+#include <string>
+#include <fstream>
+#include <cerrno>
+
+#include "action.h"
+#include "io.h"
 
 extern std::vector<IO *> *g_ios;
 
@@ -59,4 +65,24 @@ void Action::fromJson(const json &jsonObject)
         std::cerr << e.what() << '\n';
     }
     
+}
+
+void Action::executeSingle(IO io)
+{
+    io.set();
+    if (io.getDuration() > 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(io.getDuration()));
+        io.clear();
+    }
+}
+
+void Action::execute()
+{
+    std::thread actionRunner;
+
+    for (auto singleIo: this->m_outputs)
+    {
+        actionRunner = std::thread(&Action::executeSingle, this, singleIo);
+        actionRunner.detach();
+    }
 }
