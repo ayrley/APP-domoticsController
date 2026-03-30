@@ -12,6 +12,8 @@ set(NANOGUI_ROOT "/home/ayrley/priv/nanogui" CACHE PATH "Path to NanoGUI build/i
 file(GLOB SRCS CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/GUI/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/GUI/Buttons/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/GUI/Pages/*.cpp"
 )
 
 add_executable(control ${SRCS})
@@ -27,6 +29,9 @@ target_include_directories(control
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/GUI
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/GUI/Buttons
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/GUI/Pages
         ${NANOGUI_ROOT}/include
     ${NANOGUI_ROOT}/include/nanovg
     ${NANOGUI_ROOT}/ext/nanovg/src
@@ -48,7 +53,7 @@ if(DEFINED ENV{TARGET_DIR})
 endif()
 
 add_custom_target(control-linter
-    COMMAND clang-tidy ${SRCS} -- -I${CMAKE_CURRENT_SOURCE_DIR} -I${CMAKE_CURRENT_SOURCE_DIR}/src
+    COMMAND clang-tidy ${SRCS} -- -I${CMAKE_CURRENT_SOURCE_DIR} -I${CMAKE_CURRENT_SOURCE_DIR}/src -I${CMAKE_CURRENT_SOURCE_DIR}/src/GUI -I${CMAKE_CURRENT_SOURCE_DIR}/src/GUI/Buttons -I${CMAKE_CURRENT_SOURCE_DIR}/src/GUI/Pages
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMENT "Running clang-tidy on domoticsController sources"
 )

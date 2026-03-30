@@ -8,7 +8,7 @@ BUILD_DIR := build-make
 OBJ_DIR := $(BUILD_DIR)/obj
 TARGET := $(BUILD_DIR)/$(NAME)
  
-SRCS	:= $(wildcard src/*.cpp) $(wildcard src/GUI/*.cpp)
+SRCS	:= $(wildcard src/*.cpp) $(wildcard src/GUI/*.cpp) $(wildcard src/GUI/Buttons/*.cpp) $(wildcard src/GUI/Pages/*.cpp)
 
 OBJS	:= $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(SRCS))
 DEPS	:= $(OBJS:.o=.d)
@@ -18,6 +18,8 @@ CXXFLAGS += -DNANOGUI_USE_OPENGL -DNANOGUI_SHARED -DNVG_SHARED
 INCS 	:= 	-I. \
 		-Isrc \
 		-Isrc/GUI \
+		-Isrc/GUI/Buttons \
+		-Isrc/GUI/Pages \
 		-I$(NANOGUI_ROOT)/include \
 		-I$(NANOGUI_ROOT)/include/nanovg \
 		-I$(NANOGUI_ROOT)/ext/nanovg/src
