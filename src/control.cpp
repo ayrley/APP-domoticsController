@@ -5,14 +5,20 @@
 #include <vector>
 #include <thread>
 #include <filesystem>
+#include <exception>
+#include <cstdlib>
+#include <dlfcn.h>
 
 #include <stdint.h>
+#include <GLFW/glfw3.h>
+#include <nanogui/nanogui.h>
 
 #include "control.h"
 #include "settings.h"
 #include "badge.h"
 #include "reader.h"
 #include "io.h"
+#include "screen.h"
 #include "debug.h"
 
 std::vector<Settings *> *g_settings = new std::vector<Settings *>();
@@ -138,10 +144,74 @@ int startActions()
    	return ret;
 }
 
-int main(void)
+bool hasDisplayServer()
+{
+	const char *display = std::getenv("DISPLAY");
+	const char *waylandDisplay = std::getenv("WAYLAND_DISPLAY");
+
+	return (display != nullptr && display[0] != '\0')
+		|| (waylandDisplay != nullptr && waylandDisplay[0] != '\0');
+}
+
+bool shouldUseFramebufferGui()
+{
+	return !hasDisplayServer();
+}
+
+bool enableNullPlatformIfSupported()
+{
+	constexpr int glfwPlatformHint = 0x00050003;
+	constexpr int glfwPlatformNull = 0x00060005;
+	using GlfwPlatformSupportedFn = int (*)(int);
+
+	void *symbol = dlsym(RTLD_DEFAULT, "glfwPlatformSupported");
+	if (symbol == nullptr) {
+		ERR("GLFW runtime does not expose platform capability probing; attempting default desktop backend");
+
+		return false;
+	}
+
+	auto glfwPlatformSupportedFn = reinterpret_cast<GlfwPlatformSupportedFn>(symbol);
+	if (glfwPlatformSupportedFn(glfwPlatformNull) == GLFW_FALSE) {
+		ERR("GLFW null platform is unavailable; attempting default desktop backend");
+
+		return false;
+	}
+
+	glfwInitHint(glfwPlatformHint, glfwPlatformNull);
+
+	return true;
+}
+
+int runGui()
 {
 	int ret = 0;
+	bool useFramebufferGui = shouldUseFramebufferGui();
 
+	LOG("[GUI] Startup mode: "
+		      << (useFramebufferGui ? "framebuffer/null platform" : "desktop window (X11/Wayland)"));
+
+	try {
+		if (useFramebufferGui) {
+			LOG("No display server detected; GUI will run in framebuffer/null-platform mode.");
+			enableNullPlatformIfSupported();
+		}
+
+		nanogui::init();
+		Screen screen(1024, 768);
+		screen.render();
+		nanogui::run();
+		nanogui::shutdown();
+	} catch (const std::exception &e) {
+		ERR("GUI startup failed: " << e.what());
+		ret = 1;
+	}
+
+	return ret;
+}
+
+int main(void)
+{
 	loadIos();
 	LOG("IOs loaded");
 
@@ -157,12 +227,6 @@ int main(void)
 	startActions();
 	LOG("Actions started");
 
-	while (1)
-	{
-		std::this_thread::sleep_for(std::chrono::seconds(1));
-	}
-	
-
-	return ret;
+	return runGui();
 
 }
