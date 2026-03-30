@@ -89,8 +89,8 @@ void JarvisBackground::draw(NVGcontext *ctx) {
 		nvgStroke(ctx);
 	}
 
-	const float cx = x + w * 0.78f;
-	const float cy = y + h * 0.36f;
+	const float cx = x + w * 0.50f;
+	const float cy = y + h * 0.50f;
 	for (int i = 0; i < 5; ++i) {
 		float radius = 38.0f + static_cast<float>(i) * 28.0f + 2.0f * std::sin(t * 1.7 + i);
 		nvgBeginPath(ctx);
