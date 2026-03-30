@@ -13,6 +13,7 @@
 #include "badge.h"
 #include "reader.h"
 #include "io.h"
+#include "debug.h"
 
 std::vector<Settings *> *g_settings = new std::vector<Settings *>();
 std::vector<Badge *> *g_badges = new std::vector<Badge *>();
@@ -142,19 +143,19 @@ int main(void)
 	int ret = 0;
 
 	loadIos();
-	std::cout << "--- IOs loaded..." << std::endl;
+	LOG("IOs loaded");
 
 	loadBadges();
-	std::cout << "--- Badges loaded..." << std::endl;
+	LOG("Badges loaded");
 
 	loadSettings();
-	std::cout << "--- Settings loaded..." << std::endl;
+	LOG("Settings loaded");
 
 	startReaders();
-	std::cout << "--- Readers started..." << std::endl;	
+	LOG("Readers started");
 
 	startActions();
-	std::cout << "--- Actions started..." << std::endl;
+	LOG("Actions started");
 
 	while (1)
 	{
