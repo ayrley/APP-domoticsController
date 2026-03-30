@@ -1,1 +1,8 @@
 control
+
+*.o
+*.obj
+*.so
+
+build-cmake/
+.vscode/
