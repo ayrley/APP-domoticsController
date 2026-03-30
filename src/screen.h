@@ -11,9 +11,12 @@ class Label;
 class ProgressBar;
 }
 
+class JarvisBackground;
+
 class Screen {
 private:
 	nanogui::Screen *m_screen;
+	JarvisBackground *m_background;
 
 	nanogui::Label *m_statusLabel;
 	nanogui::Label *m_cpuLabel;

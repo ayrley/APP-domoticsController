@@ -15,13 +15,13 @@ Screen::Screen(int width, int height) {
     m_screen = new nanogui::Screen(nanogui::Vector2i(width, height), "Domotic Controller");
     m_stopStatsThread = false;
 
-    JarvisBackground *background = new JarvisBackground(m_screen);
-    background->set_position(nanogui::Vector2i(0, 0));
-    background->set_fixed_size(nanogui::Vector2i(width, height));
+    m_background = new JarvisBackground(m_screen);
+    m_background->set_position(nanogui::Vector2i(0, 0));
+    m_background->set_fixed_size(nanogui::Vector2i(width, height));
 
     nanogui::Widget *panel = new nanogui::Widget(m_screen);
     panel->set_position(nanogui::Vector2i(26, 20));
-    panel->set_fixed_size(nanogui::Vector2i(470, 260));
+    panel->set_fixed_size(nanogui::Vector2i(540, 320));
     panel->set_layout(new nanogui::GroupLayout());
 
     nanogui::Label *headerLabel = new nanogui::Label(panel, "Domotics Controller", "sans-bold");
@@ -31,7 +31,10 @@ Screen::Screen(int width, int height) {
     m_statusLabel->set_font_size(20);
 
     m_cpuLabel = createMetricBlock(panel, "CPU Usage", "collecting...", &m_cpuBar);
+    m_cpuLabel->set_font_size(18);
+
     m_ramLabel = createMetricBlock(panel, "RAM Usage", "collecting...", &m_ramBar);
+    m_ramLabel->set_font_size(18);
 
     m_screen->perform_layout();
     m_screen->set_visible(true);
@@ -72,10 +75,12 @@ void Screen::startStatsUpdates() {
             previousSample = currentSample;
 
             nanogui::async([this, cpuUsage, cpuUsageFraction, ramUsage, ramUsageFraction]() {
+                float loadFactor = (cpuUsageFraction + ramUsageFraction) * 0.5f;
                 m_cpuLabel->set_caption(cpuUsage);
                 m_cpuBar->set_value(cpuUsageFraction);
                 m_ramLabel->set_caption(ramUsage);
                 m_ramBar->set_value(ramUsageFraction);
+                m_background->setLoadFactor(loadFactor);
                 m_screen->perform_layout();
                 m_screen->redraw();
             });
@@ -91,6 +96,7 @@ void Screen::updateSystemStats() {
     m_cpuBar->set_value(0.0f);
     m_ramLabel->set_caption(ramUsage);
     m_ramBar->set_value(ramUsageFraction);
+    m_background->setLoadFactor(ramUsageFraction * 0.5f);
     m_screen->perform_layout();
     m_screen->redraw();
 }
