@@ -5,4 +5,5 @@ control
 *.so
 
 build-cmake/
+build-make/
 .vscode/
