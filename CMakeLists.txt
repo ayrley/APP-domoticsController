@@ -6,21 +6,38 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(NANOGUI_ROOT "/home/ayrley/priv/nanogui" CACHE PATH "Path to NanoGUI build/install root")
+
 # Keep source list dynamic like the Makefile's wildcard.
-file(GLOB SRCS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+file(GLOB SRCS CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/GUI/*.cpp"
+)
 
 add_executable(control ${SRCS})
+
+target_compile_definitions(control
+    PRIVATE
+        NANOGUI_USE_OPENGL
+        NANOGUI_SHARED
+        NVG_SHARED
+)
 
 target_include_directories(control
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${NANOGUI_ROOT}/include
+    ${NANOGUI_ROOT}/include/nanovg
+    ${NANOGUI_ROOT}/ext/nanovg/src
 )
 
 set_target_properties(control PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(control PROPERTIES BUILD_RPATH "${NANOGUI_ROOT}")
 
 find_package(Threads REQUIRED)
-target_link_libraries(control PRIVATE Threads::Threads)
+target_link_libraries(control PRIVATE Threads::Threads nanogui)
+target_link_directories(control PRIVATE ${NANOGUI_ROOT})
 
 if(DEFINED ENV{HOST_DIR})
     target_link_directories(control PRIVATE $ENV{HOST_DIR}/usr/lib)

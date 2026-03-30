@@ -1,19 +1,30 @@
 NAME := control
 VERSION := 0.1
 DISTNAME := $(NAME)-$(VERSION)
+
+NANOGUI_ROOT := /home/ayrley/priv/nanogui
  
-SRCS	:= $(wildcard src/*.cpp)
+SRCS	:= $(wildcard src/*.cpp) $(wildcard src/GUI/*.cpp)
 		
+CXXFLAGS += -DNANOGUI_USE_OPENGL -DNANOGUI_SHARED -DNVG_SHARED
+
 INCS 	:= 	-I. \
-		-Isrc
+		-Isrc \
+		-Isrc/GUI \
+		-I$(NANOGUI_ROOT)/include \
+		-I$(NANOGUI_ROOT)/include/nanovg \
+		-I$(NANOGUI_ROOT)/ext/nanovg/src
 	 	
-LIBS	:= 
+LIBS	:= -lnanogui
 
 LIBDIR	:= 	-L$(HOST_DIR)/usr/lib \
-		-L$(TARGET_DIR)/usr/lib
+		-L$(TARGET_DIR)/usr/lib \
+		-L$(NANOGUI_ROOT)
+
+LDFLAGS += -Wl,-rpath,$(NANOGUI_ROOT)
 $(NAME):
 	$(CXX) $(CXXFLAGS) -c -fPIC $(INCS) $(SRCS) 
-	$(CXX) -o $(NAME) *.o $(LIBDIR) $(LIBS)
+	$(CXX) -o $(NAME) *.o $(LDFLAGS) $(LIBDIR) $(LIBS)
 	rm -f *.o
 	
 clean:
