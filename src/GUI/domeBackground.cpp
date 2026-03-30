@@ -1,4 +1,4 @@
-#include "jarvisBackground.h"
+#include "domeBackground.h"
 
 #include <algorithm>
 #include <cmath>
@@ -27,16 +27,16 @@ nanogui::Color lerpColor(const Rgba &a, const Rgba &b, float t) {
 
 } // namespace
 
-JarvisBackground::JarvisBackground(nanogui::Widget *parent)
+DomeBackground::DomeBackground(nanogui::Widget *parent)
 	: nanogui::Widget(parent),
 	  m_loadFactor(0.0f),
 	  m_startTime(std::chrono::steady_clock::now()) {}
 
-void JarvisBackground::setLoadFactor(float loadFactor) {
+void DomeBackground::setLoadFactor(float loadFactor) {
 	m_loadFactor.store(std::max(0.0f, std::min(1.0f, loadFactor)));
 }
 
-void JarvisBackground::draw(NVGcontext *ctx) {
+void DomeBackground::draw(NVGcontext *ctx) {
 	Widget::draw(ctx);
 
 	auto now = std::chrono::steady_clock::now();

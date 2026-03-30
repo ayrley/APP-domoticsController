@@ -1,14 +1,14 @@
-#ifndef __JARVIS_BACKGROUND_H
-#define __JARVIS_BACKGROUND_H
+#ifndef __DOME_BACKGROUND_H
+#define __DOME_BACKGROUND_H
 
 #include <atomic>
 #include <chrono>
 
 #include <nanogui/widget.h>
 
-class JarvisBackground : public nanogui::Widget {
+class DomeBackground : public nanogui::Widget {
 public:
-	explicit JarvisBackground(nanogui::Widget *parent);
+	explicit DomeBackground(nanogui::Widget *parent);
 	void setLoadFactor(float loadFactor);
 	void draw(NVGcontext *ctx) override;
 
