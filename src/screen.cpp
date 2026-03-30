@@ -1,8 +1,8 @@
 #include "screen.h"
 #include "system.h"
 
-#include "GUI/heatProgressBar.h"
-
+#include "GUI/jarvisBackground.h"
+#include "GUI/metricBlock.h"
 
 #include <chrono>
 #include <cstdlib>
@@ -11,48 +11,27 @@
 
 #include <nanogui/nanogui.h>
 
-namespace {
-
-nanogui::Label *createMetricBlock(nanogui::Widget *parent,
-                                  const std::string &title,
-                                  const std::string &initialValue,
-                                  nanogui::ProgressBar **barOut) {
-    nanogui::Widget *panel = new nanogui::Widget(parent);
-    panel->set_layout(new nanogui::GroupLayout());
-
-    nanogui::Label *titleLabel = new nanogui::Label(panel, title, "sans-bold");
-    titleLabel->set_font_size(18);
-
-    HeatProgressBar *bar = new HeatProgressBar(panel);
-    bar->set_fixed_size(nanogui::Vector2i(380, 16));
-    bar->set_value(0.0f);
-
-    nanogui::Label *valueLabel = new nanogui::Label(panel, initialValue, "sans-bold");
-    valueLabel->set_font_size(24);
-
-    if (barOut != nullptr) {
-        *barOut = bar;
-    }
-
-    return valueLabel;
-}
-
-} // namespace
-
 Screen::Screen(int width, int height) {
     m_screen = new nanogui::Screen(nanogui::Vector2i(width, height), "Domotic Controller");
     m_stopStatsThread = false;
 
-    m_screen->set_layout(new nanogui::GroupLayout());
+    JarvisBackground *background = new JarvisBackground(m_screen);
+    background->set_position(nanogui::Vector2i(0, 0));
+    background->set_fixed_size(nanogui::Vector2i(width, height));
 
-    nanogui::Label *headerLabel = new nanogui::Label(m_screen, "Domotics Controller", "sans-bold");
+    nanogui::Widget *panel = new nanogui::Widget(m_screen);
+    panel->set_position(nanogui::Vector2i(26, 20));
+    panel->set_fixed_size(nanogui::Vector2i(470, 260));
+    panel->set_layout(new nanogui::GroupLayout());
+
+    nanogui::Label *headerLabel = new nanogui::Label(panel, "Domotics Controller", "sans-bold");
     headerLabel->set_font_size(28);
 
-    m_statusLabel = new nanogui::Label(m_screen, "Status: Running", "sans-bold");
+    m_statusLabel = new nanogui::Label(panel, "Status: Running", "sans-bold");
     m_statusLabel->set_font_size(20);
 
-    m_cpuLabel = createMetricBlock(m_screen, "CPU Usage", "collecting...", &m_cpuBar);
-    m_ramLabel = createMetricBlock(m_screen, "RAM Usage", "collecting...", &m_ramBar);
+    m_cpuLabel = createMetricBlock(panel, "CPU Usage", "collecting...", &m_cpuBar);
+    m_ramLabel = createMetricBlock(panel, "RAM Usage", "collecting...", &m_ramBar);
 
     m_screen->perform_layout();
     m_screen->set_visible(true);
