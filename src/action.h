@@ -36,6 +36,8 @@ public:
     void execute();;
 
     void start();
+
+    std::string getName() { return this->m_name; }
 };
 
 #endif 

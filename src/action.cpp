@@ -7,6 +7,7 @@
 #include "action.h"
 #include "io.h"
 #include "actionIo.h"
+#include "debug.h"
 
 extern std::vector<IO *> *g_ios;
 
@@ -21,8 +22,7 @@ void Action::fromJson(const json &jsonObject)
 	}
 	catch (const std::exception& e) {
 		this->m_name = "";
-		std::cout << "name could not be found in " << jsonObject
-			<< std::endl;
+		DBG("name could not be found in " + jsonObject.dump());
 	}
 
     try {
@@ -32,8 +32,7 @@ void Action::fromJson(const json &jsonObject)
             this->m_inputType = IN_IP;
     }
     catch (const std::exception& e) {
-        std::cout << "input_type, input, or outputs could not be found in " 
-            << jsonObject << std::endl;
+        DBG("input_type could not be found in " + jsonObject.dump());
     }
     
 	try
@@ -46,7 +45,7 @@ void Action::fromJson(const json &jsonObject)
         }
     }
     catch(const std::exception& e) {
-        std::cerr << e.what() << '\n';
+        DBG("input could not be found in " + jsonObject.dump());
     }
 
     try
@@ -67,10 +66,8 @@ void Action::fromJson(const json &jsonObject)
         }
     }
     catch(const std::exception& e) {
-        std::cerr << e.what() << '\n';
+        DBG("outputs could not be found in " + jsonObject.dump());
     }
-    std::cout << "done" << std::endl;
-
 }
 
 void Action::executeSingle(ActionIo io)
@@ -102,7 +99,7 @@ void Action::run()
         if (this->m_input.get())
             this->execute();
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
     }
 }
 void Action::start()

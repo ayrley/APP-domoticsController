@@ -6,6 +6,8 @@
 #include <stdint.h>
 
 #include "badge.h"
+#include "debug.h"
+
 
 Badge::Badge(const std::string &badgeFile)
 {
@@ -35,8 +37,7 @@ int Badge::parse()
 	}
 	catch (const std::exception& e) {
 		this->m_firstName = "";
-		std::cout << "firstName could not be found in " << this->m_badgeFile
-			<< std::endl;
+		DBG("firstName could not be found in " + this->m_badgeFile);
 	}
 
 	try {
@@ -44,8 +45,7 @@ int Badge::parse()
 	}
 	catch (const std::exception& e) {
 		this->m_lastName = "";
-		std::cout << "lastName could not be found in " << this->m_badgeFile
-			<< std::endl;
+		DBG("lastName could not be found in " + this->m_badgeFile);
 	}
 
 	try {
@@ -53,8 +53,7 @@ int Badge::parse()
 	}
 	catch (const std::exception& e) {
 		this->m_badgeNumber = 0;
-		std::cout << "badgeNumber could not be found in " << this->m_badgeFile
-			<< std::endl;
+		DBG("badgeNumber could not be found in " + this->m_badgeFile);
 	}
 
 

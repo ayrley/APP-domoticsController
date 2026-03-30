@@ -142,19 +142,25 @@ int main(void)
 	int ret = 0;
 
 	loadIos();
-	std::cout << "IOs loaded..." << std::endl;
+	std::cout << "--- IOs loaded..." << std::endl;
 
 	loadBadges();
-	std::cout << "Badges loaded..." << std::endl;
+	std::cout << "--- Badges loaded..." << std::endl;
 
 	loadSettings();
-	std::cout << "Settings loaded..." << std::endl;
+	std::cout << "--- Settings loaded..." << std::endl;
 
 	startReaders();
-	std::cout << "Readers started..." << std::endl;	
+	std::cout << "--- Readers started..." << std::endl;	
 
 	startActions();
-	std::cout << "Actions started..." << std::endl;
+	std::cout << "--- Actions started..." << std::endl;
+
+	while (1)
+	{
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+	}
+	
 
 	return ret;
 

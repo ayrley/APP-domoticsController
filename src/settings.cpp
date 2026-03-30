@@ -14,6 +14,7 @@
 Settings::Settings()
 {
 	this->m_readers = new std::vector<Reader *>();
+	this->m_actions = new std::vector<Action *>();
 	this->m_settingsFile = "/etc/factory.settigetReadersngs.domotics";
 	this->m_network = new Network();
 	this->read();
@@ -22,6 +23,7 @@ Settings::Settings()
 Settings::Settings(std::string settingsFile)
 {
 	this->m_readers = new std::vector<Reader *>();
+	this->m_actions = new std::vector<Action *>();
 	this->m_settingsFile = settingsFile;
 	this->m_network = new Network();
 	this->read();
@@ -76,11 +78,10 @@ int Settings::parseActions()
  	for (auto &singleAction : this->m_settings["actions"].items())
 	{
 		Action *action = new Action();
-		std::cout << "Parsing action: " << singleAction.value() << std::endl;
 		action->fromJson(singleAction.value());
 		this->m_actions->push_back(action);
-	}    
-	
+	}
+
 	return 0;
 }
 
@@ -95,7 +96,6 @@ int Settings::read()
 	this->parseSettingsType();
 	this->parseReaders();
 	this->parseActions();
-	std::cout << "    Actions parsed ..." << std::endl;
 
 	return 0;
 }

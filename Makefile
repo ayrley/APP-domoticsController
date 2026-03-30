@@ -14,6 +14,7 @@ LIBDIR	:= 	-L$(HOST_DIR)/usr/lib \
 $(NAME):
 	$(CXX) $(CXXFLAGS) -c -fPIC $(INCS) $(SRCS) 
 	$(CXX) -o $(NAME) *.o $(LIBDIR) $(LIBS)
+	rm -f *.o
 	
 clean:
 	rm -f $(NAME) *.o

@@ -8,6 +8,7 @@
 #include <fcntl.h>
 
 #include "io.h"
+#include "debug.h"
 
 IO::IO()
 {
@@ -129,8 +130,7 @@ void IO::fromJson(const json &jsonObject)
 	}
 	catch (const std::exception& e) {
 		this->m_name = "";
-		std::cout << "name could not be found in " << jsonObject
-			<< std::endl;
+		DBG("name could not be found in " + jsonObject.dump());
 	}
 
 	try {
@@ -138,8 +138,7 @@ void IO::fromJson(const json &jsonObject)
 	}
 	catch (const std::exception& e) {
 		this->m_location = "";
-		std::cout << "location could not be found in " << jsonObject
-			<< std::endl;
+		DBG("location could not be found in " + jsonObject.dump());
 	}
 
 	try {
@@ -151,8 +150,7 @@ void IO::fromJson(const json &jsonObject)
 	}
 	catch (const std::exception& e) {
 		this->m_locationType = IO_LOC_LOCAL;
-		std::cout << "type could not be found in " << jsonObject
-			<< std::endl;
+		DBG("type could not be found in " + jsonObject.dump());
 	}
 
 	try {
@@ -166,7 +164,6 @@ void IO::fromJson(const json &jsonObject)
 	}
 	catch (const std::exception& e) {
 		this->m_direction = IO_DIR_IN;
-		std::cout << "direction could not be found in " << jsonObject
-			<< std::endl;
+		DBG("direction could not be found in " + jsonObject.dump());
 	}
 }
