@@ -1,6 +1,6 @@
 #include "manualControlPage.h"
 
-#include "jarvisButton.h"
+#include "domeButton.h"
 
 #include <nanogui/nanogui.h>
 
@@ -27,17 +27,17 @@ ManualControlPage::ManualControlPage(nanogui::Widget *parent, std::function<void
 		nanogui::Orientation::Horizontal, nanogui::Alignment::Middle, 0, 12));
 	actionsRow->set_fixed_height(44);
 
-	auto *unlockButton = new JarvisButton(actionsRow, "Unlock Door", [this]() {
+	auto *unlockButton = new DomeButton(actionsRow, "Unlock Door", [this]() {
 		m_statusLabel->set_caption("Status: Unlock Door triggered");
 	});
 	unlockButton->set_fixed_size(nanogui::Vector2i(180, 40));
 
-	auto *lockButton = new JarvisButton(actionsRow, "Lock Door", [this]() {
+	auto *lockButton = new DomeButton(actionsRow, "Lock Door", [this]() {
 		m_statusLabel->set_caption("Status: Lock Door triggered");
 	});
 	lockButton->set_fixed_size(nanogui::Vector2i(160, 40));
 
-	auto *lightButton = new JarvisButton(actionsRow, "Toggle Light", [this]() {
+	auto *lightButton = new DomeButton(actionsRow, "Toggle Light", [this]() {
 		m_statusLabel->set_caption("Status: Toggle Light triggered");
 	});
 	lightButton->set_fixed_size(nanogui::Vector2i(180, 40));

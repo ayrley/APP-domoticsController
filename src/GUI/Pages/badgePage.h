@@ -13,7 +13,7 @@ class TextBox;
 class Screen;
 } // namespace nanogui
 
-class JarvisButton;
+class DomeButton;
 
 class BadgePage : public DefaultPage {
 public:
@@ -22,7 +22,6 @@ public:
 	                   std::function<void()> onBack,
 	                   std::function<void()> onBadgesChanged = nullptr);
 
-	/// Rescan the badges directory and rebuild the list.
 	void refresh();
 
 private:
@@ -30,6 +29,7 @@ private:
 	void populateForm(const std::string &badgeFile);
 	void clearForm();
 	void saveBadge();
+	void removeBadge();
 
 	std::string           m_badgesDir;
 	std::string           m_selectedBadgeFile;
@@ -43,7 +43,7 @@ private:
 	nanogui::TextBox *m_lastNameBox{nullptr};
 	nanogui::TextBox *m_badgeNumberBox{nullptr};
 
-	std::vector<JarvisButton *> m_badgeButtons;
+	std::vector<DomeButton *> m_badgeButtons;
 };
 
 #endif

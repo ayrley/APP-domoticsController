@@ -3,9 +3,9 @@
 
 #include <functional>
 
-#include "jarvisButton.h"
+#include "domeButton.h"
 
-class HomeButton : public JarvisButton {
+class HomeButton : public DomeButton {
 public:
 	explicit HomeButton(nanogui::Widget *parent, std::function<void()> callback);
 };

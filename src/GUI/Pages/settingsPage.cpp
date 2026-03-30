@@ -1,6 +1,6 @@
 #include "settingsPage.h"
 
-#include "jarvisButton.h"
+#include "domeButton.h"
 
 #include <nanogui/nanogui.h>
 
@@ -25,7 +25,7 @@ SettingsPage::SettingsPage(nanogui::Widget *parent,
 	auto *controls = new nanogui::Widget(contentPanel());
 	controls->set_layout(new nanogui::GroupLayout(10, 6, 0, 10));
 
-	auto *saveBtn = new JarvisButton(controls, "Save Settings", [onSave]() {
+	auto *saveBtn = new DomeButton(controls, "Save Settings", [onSave]() {
 		if (onSave) {
 			onSave();
 		}

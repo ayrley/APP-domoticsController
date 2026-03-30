@@ -5,6 +5,10 @@
 
 #include <nanogui/widget.h>
 
+namespace nanogui {
+class VScrollPanel;
+} // namespace nanogui
+
 class HomeButton;
 
 class DefaultPage : public nanogui::Widget {
@@ -17,6 +21,7 @@ protected:
 
 private:
 	HomeButton *m_homeButton{nullptr};
+	nanogui::VScrollPanel *m_scrollPanel{nullptr};
 	nanogui::Widget *m_contentPanel{nullptr};
 };
 

@@ -1,5 +1,6 @@
 #include "badgePage.h"
-#include "jarvisButton.h"
+#include "domeConfirmDialog.h"
+#include "domeButton.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -65,8 +66,9 @@ BadgePage::BadgePage(nanogui::Widget     *parent,
 	    nanogui::Orientation::Horizontal, nanogui::Alignment::Middle, 0, 12));
 	buttonRow->set_fixed_height(44);
 
-	new JarvisButton(buttonRow, "Save",  [this]() { saveBadge(); });
-	new JarvisButton(buttonRow, "Clear", [this]() { clearForm(); });
+	new DomeButton(buttonRow, "Save",  [this]() { saveBadge(); });
+	new DomeButton(buttonRow, "Clear", [this]() { clearForm(); });
+	new DomeButton(buttonRow, "Remove", [this]() { removeBadge(); });
 
 	buildBadgeList();
 }
@@ -96,7 +98,7 @@ void BadgePage::buildBadgeList() {
 	for (const auto &path : paths) {
 		std::string file = path.string();
 		std::string stem = path.stem().string();
-		auto *btn = new JarvisButton(m_badgeListPanel, stem, [this, file]() {
+		auto *btn = new DomeButton(m_badgeListPanel, stem, [this, file]() {
 			populateForm(file);
 		});
 		btn->set_fixed_height(34);
@@ -134,12 +136,11 @@ void BadgePage::populateForm(const std::string &badgeFile) {
 }
 
 void BadgePage::clearForm() {
-	m_selectedBadgeFile.clear();
-	m_fileNameBox->set_value("");
+	// Keep selected badge/file name context; only field values are cleared until Save is clicked.
 	m_firstNameBox->set_value("");
 	m_lastNameBox->set_value("");
 	m_badgeNumberBox->set_value("");
-	m_statusLabel->set_caption("Form cleared.");
+	m_statusLabel->set_caption("Form cleared (not saved).");
 }
 
 void BadgePage::saveBadge() {
@@ -187,4 +188,59 @@ void BadgePage::saveBadge() {
 		m_onBadgesChanged();
 	}
 	buildBadgeList();
+}
+
+void BadgePage::removeBadge() {
+	std::string fileName = m_fileNameBox ? m_fileNameBox->value() : std::string{};
+	if (fileName.empty() && !m_selectedBadgeFile.empty()) {
+		fileName = std::filesystem::path(m_selectedBadgeFile).stem().string();
+	}
+
+	if (fileName.empty()) {
+		m_statusLabel->set_caption("Error: select a badge first.");
+		return;
+	}
+
+	std::replace(fileName.begin(), fileName.end(), '/', '_');
+	std::replace(fileName.begin(), fileName.end(), '\\', '_');
+	const std::string filePath = m_badgesDir + "/" + fileName + ".json";
+
+	if (!std::filesystem::exists(filePath)) {
+		m_statusLabel->set_caption("Error: badge not found: " + fileName);
+		return;
+	}
+
+	nanogui::Widget *dialogParent = m_nanoScreen ? static_cast<nanogui::Widget *>(m_nanoScreen)
+	                                             : static_cast<nanogui::Widget *>(this);
+
+	new DomeConfirmDialog(
+		dialogParent,
+		"CONFIRM DELETION",
+		"Badge: " + fileName,
+		"This action permanently removes the badge.",
+		"Remove",
+		"Cancel",
+		[this, filePath, fileName]() {
+			std::error_code ec;
+			bool removed = std::filesystem::remove(filePath, ec);
+			if (!removed || ec) {
+				m_statusLabel->set_caption("Error: could not remove " + fileName);
+				return;
+			}
+
+			m_selectedBadgeFile.clear();
+			m_fileNameBox->set_value("");
+			m_firstNameBox->set_value("");
+			m_lastNameBox->set_value("");
+			m_badgeNumberBox->set_value("");
+			m_statusLabel->set_caption("Removed: " + fileName + ".json");
+
+			if (m_onBadgesChanged) {
+				m_onBadgesChanged();
+			}
+			buildBadgeList();
+		},
+		[this]() {
+			m_statusLabel->set_caption("Removal canceled.");
+		});
 }
