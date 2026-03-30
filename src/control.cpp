@@ -212,7 +212,7 @@ int runGui()
 		}
 
 		nanogui::init();
-		Screen screen(1024, 768, DIR_SHARED "badges", []() {
+		Screen screen(1024, 600, DIR_SHARED "badges", []() {
 			reloadBadgesCache();
 			LOG("Badges cache reloaded");
 		});
