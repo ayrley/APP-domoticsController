@@ -26,6 +26,20 @@ std::vector<Badge *> *g_badges = new std::vector<Badge *>();
 std::vector<IO *> *g_ios = new std::vector<IO *>();
 std::vector<Action *> *g_actions = new std::vector<Action *>();
 
+void clearBadgesCache()
+{
+	for (Badge *badge : *g_badges) {
+		delete badge;
+	}
+	g_badges->clear();
+}
+
+void reloadBadgesCache()
+{
+	clearBadgesCache();
+	loadBadges();
+}
+
 Settings * getSetting(enum settingsType settingType)
 {
 	for(Settings *setting : *g_settings) {
@@ -198,7 +212,10 @@ int runGui()
 		}
 
 		nanogui::init();
-		Screen screen(1024, 768);
+		Screen screen(1024, 768, DIR_SHARED "badges", []() {
+			reloadBadgesCache();
+			LOG("Badges cache reloaded");
+		});
 		screen.render();
 		nanogui::run();
 		nanogui::shutdown();
