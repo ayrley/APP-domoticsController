@@ -4,6 +4,9 @@ control
 *.obj
 *.so
 
+badges/*.json
+ios/*.json
+
 build-cmake/
 build-make/
 .vscode/
