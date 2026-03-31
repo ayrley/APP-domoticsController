@@ -9,7 +9,7 @@
 #define DBG(msg)
 #endif
 
-#define ERR(msg) std::cerr << msg << std::endl;
+#define ERR(msg) std::cerr << "!!! " << msg << " !!!" << std::endl;
 #define LOG(msg) std::clog << "--- " << msg << " ---" << std::endl;
 
 #endif
