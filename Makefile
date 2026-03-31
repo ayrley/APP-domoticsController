@@ -48,6 +48,7 @@ $(NAME): $(TARGET)
 
 $(TARGET): $(OBJS) | $(BUILD_DIR)
 	$(CXX) -o $@ $(OBJS) $(LDFLAGS) $(LIBDIR) $(LIBS)
+	ln -sf $(TARGET) $(NAME)
 
 $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(dir $@)

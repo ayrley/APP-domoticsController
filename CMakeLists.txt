@@ -44,6 +44,12 @@ target_include_directories(control
 set_target_properties(control PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(control PROPERTIES BUILD_RPATH "${NANOGUI_ROOT}")
 
+add_custom_command(TARGET control POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E rm -f ${CMAKE_CURRENT_SOURCE_DIR}/control
+    COMMAND ${CMAKE_COMMAND} -E create_symlink $<TARGET_FILE:control> ${CMAKE_CURRENT_SOURCE_DIR}/control
+    COMMENT "Linking top-level control to built target"
+)
+
 find_package(Threads REQUIRED)
 target_link_libraries(control PRIVATE Threads::Threads nanogui)
 target_link_directories(control PRIVATE ${NANOGUI_ROOT})
