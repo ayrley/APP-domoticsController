@@ -88,8 +88,6 @@ int Settings::read()
 {
     std::ifstream jsonFile(this->m_settingsFile);
 
-    std::cout << "Reading settings from file: " << this->m_settingsFile << std::endl;
-
     if (!jsonFile.is_open()) {
         ERR("Unable to open settings file: " + this->m_settingsFile);
         return -ENOENT;

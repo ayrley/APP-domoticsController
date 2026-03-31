@@ -52,24 +52,20 @@ void Action::fromJson(const json &jsonObject)
         DBG("name could not be found in " + jsonObject.dump());
     }
 
-    try {
+    if (jsonObject.contains("input_type")) {
         if (jsonObject["input_type"] == "GPIO")
             this->m_inputType = IN_GPIO;
-        else if (jsonObject["input_type"] == "IP")
+        else if (jsonObject.contains("input_type") && jsonObject["input_type"] == "IP")
             this->m_inputType = IN_IP;
-    } catch (const std::exception &e) {
-        DBG("input_type could not be found in " + jsonObject.dump());
     }
 
-    try {
-        if (jsonObject["input"]) {
+    if (jsonObject.contains("input")) {
+        if (jsonObject.contains("input") && !jsonObject["input"].is_null()) {
             for (IO *io : *g_ios) {
                 if (io->getName() == jsonObject["input"])
                     this->m_input = *io;
             }
         }
-    } catch (const std::exception &e) {
-        DBG("input could not be found in " + jsonObject.dump());
     }
 
     try {

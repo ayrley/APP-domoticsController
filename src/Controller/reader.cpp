@@ -30,23 +30,6 @@ Reader::~Reader()
 {
 }
 
-json Reader::getJson()
-{
-    json object = {};
-    object += json::object_t::value_type("name", this->m_readerName);
-    object += json::object_t::value_type("location", this->m_readerLocation);
-    object += json::object_t::value_type("location_type", this->m_readerLocationType == RDR_LOC_IP ? "IP" : "LOCAL");
-    object += json::object_t::value_type("type", this->m_readerType == RDR_OSDP ? "OSDP" : "WIEGAND");
-    if (this->m_grantedAction) {
-        object += json::object_t::value_type("granted", this->m_grantedAction->getJson());
-    }
-    if (this->m_deniedAction) {
-        object += json::object_t::value_type("denied", this->m_deniedAction->getJson());
-    }
-
-    return object;
-}
-
 void Reader::setBadges(std::vector<Badge *> *badges)
 {
     this->m_badges = badges;
@@ -242,6 +225,23 @@ void Reader::handle()
         this->handleNetworkReader();
 }
 
+json Reader::getJson()
+{
+    json object = {};
+    object += json::object_t::value_type("name", this->m_readerName);
+    object += json::object_t::value_type("location", this->m_readerLocation);
+    object += json::object_t::value_type("location_type", this->m_readerLocationType == RDR_LOC_IP ? "IP" : "LOCAL");
+    object += json::object_t::value_type("type", this->m_readerType == RDR_OSDP ? "OSDP" : "WIEGAND");
+    if (this->m_grantedAction) {
+        object += json::object_t::value_type("granted", this->m_grantedAction->getJson());
+    }
+    if (this->m_deniedAction) {
+        object += json::object_t::value_type("denied", this->m_deniedAction->getJson());
+    }
+
+    return object;
+}
+
 void Reader::fromJson(const json &jsonObject)
 {
     std::string tmpHelp;
@@ -260,18 +260,16 @@ void Reader::fromJson(const json &jsonObject)
         this->m_readerType = RDR_OSDP;
 
     if (jsonObject.contains("granted")) {
-        for (const auto &actionJson : jsonObject["granted"].items()) {
-            Action *grantedAction = new Action();
-            grantedAction->fromJson(actionJson.value());
-            this->m_grantedAction = grantedAction;
-        }
+        json grantedActionJson = jsonObject["granted"];
+        Action *grantedAction = new Action();
+        grantedAction->fromJson(grantedActionJson);
+        this->m_grantedAction = grantedAction;
     }
 
     if (jsonObject.contains("denied")) {
-        for (const auto &actionJson : jsonObject["denied"].items()) {
-            Action *deniedAction = new Action();
-            deniedAction->fromJson(actionJson.value());
-            this->m_deniedAction = deniedAction;
-        }
+        json deniedActionJson = jsonObject["denied"];
+        Action *deniedAction = new Action();
+        deniedAction->fromJson(deniedActionJson);
+        this->m_deniedAction = deniedAction;
     }
 }
