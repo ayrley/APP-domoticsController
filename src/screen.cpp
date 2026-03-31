@@ -7,6 +7,7 @@
 #include "GUI/Pages/badgePage.h"
 #include "GUI/Pages/manualControlPage.h"
 #include "GUI/Pages/overviewPage.h"
+#include "GUI/Pages/screensaverPage.h"
 #include "GUI/Pages/settingsPage.h"
 
 #include <chrono>
@@ -23,6 +24,7 @@ constexpr int PAGE_BADGES = 1;
 constexpr int PAGE_OVERVIEW = 2;
 constexpr int PAGE_SETTINGS = 3;
 constexpr int PAGE_MANUAL = 4;
+constexpr int PAGE_SCREENSAVER = 5;
 constexpr float PI = 3.14159265359f;
 constexpr float ORBIT_BASE_OVERVIEW = -PI * 0.75f;
 constexpr float ORBIT_BASE_BADGES = -PI * 0.25f;
@@ -33,8 +35,10 @@ constexpr float ORBIT_BASE_SETTINGS = PI * 0.75f;
 Screen::Screen(int width,
                int height,
                const std::string &badgesDir,
-               std::function<void()> onBadgesChanged)
-    : m_onBadgesChanged(std::move(onBadgesChanged)) {
+                             std::function<void()> onBadgesChanged,
+                             std::function<void()> onScreensaverWakeRequest)
+        : m_onBadgesChanged(std::move(onBadgesChanged)),
+            m_onScreensaverWakeRequest(std::move(onScreensaverWakeRequest)) {
     m_screen = new nanogui::Screen(nanogui::Vector2i(width, height), "Domotic Controller");
     m_stopStatsThread = false;
     const nanogui::Vector2i screenSize = m_screen->size();
@@ -48,6 +52,7 @@ Screen::Screen(int width,
     m_settingsPage = nullptr;
     m_manualControlPage = nullptr;
     m_badgePage = nullptr;
+    m_screensaverPage = nullptr;
     m_overviewOrbitButton = nullptr;
     m_badgesOrbitButton = nullptr;
     m_settingsOrbitButton = nullptr;
@@ -60,6 +65,7 @@ Screen::Screen(int width,
     buildOverviewPage();
     buildSettingsPage();
     buildManualControlPage();
+    buildScreensaverPage();
 
     m_badgePage = new BadgePage(
         m_screen,
@@ -167,6 +173,18 @@ void Screen::buildManualControlPage() {
     m_manualControlPage->set_fixed_size(screenSize);
 }
 
+void Screen::buildScreensaverPage() {
+    const nanogui::Vector2i screenSize = m_screen->size();
+    m_screensaverPage = new ScreensaverPage(m_screen, [this]() {
+        if (m_onScreensaverWakeRequest) {
+            m_onScreensaverWakeRequest();
+        }
+        setPresenceDetected(true);
+    });
+    m_screensaverPage->set_position(nanogui::Vector2i(0, 0));
+    m_screensaverPage->set_fixed_size(screenSize);
+}
+
 void Screen::updateStatus(const std::string &status) {
     if (m_overviewPage) {
         m_overviewPage->setStatus(status);
@@ -232,6 +250,15 @@ nanogui::Screen *Screen::getScreen() const {
     return m_screen;
 }
 
+void Screen::setPresenceDetected(bool detected) {
+    if (m_presenceDetected == detected) {
+        return;
+    }
+
+    m_presenceDetected = detected;
+    switchPage(detected ? PAGE_LANDING : PAGE_SCREENSAVER);
+}
+
 void Screen::switchPage(int page) {
     m_currentPage = page;
     m_landingPanel->set_visible(page == PAGE_LANDING);
@@ -239,6 +266,9 @@ void Screen::switchPage(int page) {
     m_overviewPage->set_visible(page == PAGE_OVERVIEW);
     m_settingsPage->set_visible(page == PAGE_SETTINGS);
     m_manualControlPage->set_visible(page == PAGE_MANUAL);
+    if (m_screensaverPage) {
+        m_screensaverPage->set_visible(page == PAGE_SCREENSAVER);
+    }
     if (page == PAGE_BADGES)
         m_badgePage->refresh();
     m_screen->perform_layout();

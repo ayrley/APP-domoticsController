@@ -16,6 +16,7 @@ class BadgePage;
 class OverviewPage;
 class SettingsPage;
 class ManualControlPage;
+class ScreensaverPage;
 class OrbitButton;
 
 class Screen {
@@ -28,6 +29,7 @@ private:
 	SettingsPage    *m_settingsPage;
 	ManualControlPage *m_manualControlPage;
 	BadgePage       *m_badgePage;
+	ScreensaverPage *m_screensaverPage;
 	OrbitButton     *m_overviewOrbitButton;
 	OrbitButton     *m_badgesOrbitButton;
 	OrbitButton     *m_settingsOrbitButton;
@@ -36,7 +38,9 @@ private:
 	int              m_landingCenterY;
 	float            m_landingOrbitRadius;
 	int              m_currentPage{0};
+	bool             m_presenceDetected{true};
 	std::function<void()> m_onBadgesChanged;
+	std::function<void()> m_onScreensaverWakeRequest;
 
 	std::thread m_statsThread;
 	std::atomic<bool> m_stopStatsThread;
@@ -48,16 +52,19 @@ private:
 	void buildOverviewPage();
 	void buildSettingsPage();
 	void buildManualControlPage();
+	void buildScreensaverPage();
 	void updateLandingOrbit(float phase);
 
 public:
 	Screen(int width = 1024,
 	       int height = 600,
 	       const std::string &badgesDir = "badges",
-	       std::function<void()> onBadgesChanged = nullptr);
+	       std::function<void()> onBadgesChanged = nullptr,
+	       std::function<void()> onScreensaverWakeRequest = nullptr);
 	~Screen();
 
 	void updateStatus(const std::string &status);
+	void setPresenceDetected(bool detected);
 	void render();
 
 	nanogui::Screen *getScreen() const;
