@@ -136,6 +136,16 @@ int Settings::write()
     this->m_settings.push_back(json::object_t::value_type("network",
                                                           this->m_network->getJson()));
 
+    this->m_settings["readers"] = json::array();
+    for (Reader *reader : *this->m_readers) {
+        this->m_settings["readers"].push_back(reader->getJson());
+    }
+
+    this->m_settings["actions"] = json::array();
+    for (Action *action : *this->m_actions) {
+        this->m_settings["actions"].push_back(action->getJson());
+    }
+
     settingsFile << std::setw(4) << this->m_settings << std::endl;
 
     return 0;
