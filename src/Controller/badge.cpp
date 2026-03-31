@@ -72,7 +72,7 @@ int Badge::parse()
 
 bool Badge::valid(uint64_t badgeToCheck)
 {
-    return false;
+    return (this->m_badgeNumber == badgeToCheck);
 }
 
 uint64_t Badge::getBadgeNumber()

@@ -12,7 +12,10 @@
 
 #include "action.h"
 #include "badge.h"
+#include "badgeProtocol.h"
+#include "debug.h"
 #include "reader.h"
+#include "tcpServer.h"
 
 Reader::Reader()
 {
@@ -207,6 +210,38 @@ void Reader::handleOsdpReader()
 
 void Reader::handleNetworkReader()
 {
+    TcpServer server;
+    BadgeProtocol protocol;
+    LOG("Network reader '" << this->m_readerName << "' is starting on " << this->m_readerLocation);
+
+    server.listenAndServe(this->m_readerLocation, [this, &protocol](const std::string &payload) {
+        uint64_t badge = 0;
+        bool validPayload = protocol.parseBadgeFromPayload(payload, badge);
+
+        bool validBadge = false;
+        Action *actionToExecute = this->m_deniedAction;
+
+        if (validPayload && this->m_badges) {
+            for (auto singleBadge : *this->m_badges) {
+                if (singleBadge && singleBadge->valid(badge)) {
+                    validBadge = true;
+                    actionToExecute = this->m_grantedAction;
+                    break;
+                }
+            }
+        }
+
+        if (!validBadge)
+            actionToExecute = this->m_deniedAction;
+
+        if (actionToExecute)
+            actionToExecute->execute();
+
+        return protocol.buildReply(validBadge, badge,
+                                   actionToExecute ? actionToExecute->getName() : "",
+                                   validPayload);
+    });
+
 }
 
 void Reader::handleLocalReader()
