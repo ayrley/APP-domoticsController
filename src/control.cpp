@@ -152,6 +152,7 @@ int startReaders()
     int ret = 0;
 
     for (auto singleReader : *g_userSettings->getReaders()) {
+        singleReader->setBadges(g_badges);
         singleReader->start();
     }
 
