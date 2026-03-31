@@ -4,7 +4,9 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <sys/reboot.h>
 #include <sys/statvfs.h>
+#include <unistd.h>
 
 System::CpuSample System::readCpuSample()
 {
@@ -179,4 +181,14 @@ std::string System::formatGiB(unsigned long long bytes)
     stream << std::fixed << std::setprecision(1) << (static_cast<double>(bytes) / gib) << " GiB";
 
     return stream.str();
+}
+
+void System::reboot()
+{
+	sync();
+
+	if (::reboot(RB_AUTOBOOT) != 0) {
+		// If the syscall fails, fallback to invoking the system's reboot command
+		std::system("reboot");
+	}
 }

@@ -20,6 +20,8 @@ public:
     static std::string readDiskUsage();
     static double readDiskUsageFraction();
 
+    static void reboot();
+
 private:
     static std::string formatPercent(double value);
     static std::string formatGiB(unsigned long long bytes);
