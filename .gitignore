@@ -3,6 +3,7 @@ control
 *.o
 *.obj
 *.so
+*.settings.domotics
 
 badges/*.json
 ios/*.json
