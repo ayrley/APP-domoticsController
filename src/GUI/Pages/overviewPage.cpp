@@ -7,11 +7,8 @@
 OverviewPage::OverviewPage(nanogui::Widget *parent,
                            std::function<void()> onHome)
     : DefaultPage(parent, std::move(onHome)) {
-	contentPanel()->set_layout(new nanogui::GroupLayout());
-
-	auto *headerLabel = new nanogui::Label(contentPanel(), "System Overview", "sans-bold");
-	headerLabel->set_font_size(30);
-	headerLabel->set_color(nanogui::Color(0, 235, 255, 255));
+	setPageTitle("System Overview");
+	contentPanel()->set_layout(new nanogui::GroupLayout(0, 6, 14, 0));
 
 	m_statusLabel = new nanogui::Label(contentPanel(), "Status: Running", "sans-bold");
 	m_statusLabel->set_font_size(20);
