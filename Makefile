@@ -8,7 +8,10 @@ BUILD_DIR := build-make
 OBJ_DIR := $(BUILD_DIR)/obj
 TARGET := $(BUILD_DIR)/$(NAME)
  
-SRCS	:= $(wildcard src/*.cpp) $(wildcard src/GUI/*.cpp) $(wildcard src/GUI/Buttons/*.cpp) $(wildcard src/GUI/Pages/*.cpp)
+SRCS	:= 	$(wildcard src/*.cpp) \
+			$(wildcard src/GUI/*.cpp) \
+			$(wildcard src/GUI/Buttons/*.cpp) \
+			$(wildcard src/GUI/Pages/*.cpp)
 
 OBJS	:= $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(SRCS))
 DEPS	:= $(OBJS:.o=.d)
