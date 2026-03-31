@@ -3,8 +3,6 @@
 
 #include <iostream>
 
-#define DEBUG
-
 #if defined(DEBUG)
 #define DBG(msg) std::cout << "\tdebug: " << msg << std::endl;
 #else

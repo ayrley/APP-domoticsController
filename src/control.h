@@ -3,8 +3,6 @@
 
 #include "settings.h"
 
-#define DEBUG
-
 int main(void);
 int loadSettings();
 int loadBadges();
