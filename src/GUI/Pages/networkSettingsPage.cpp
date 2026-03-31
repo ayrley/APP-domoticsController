@@ -1,8 +1,10 @@
 #include "networkSettingsPage.h"
 
 #include "domeButton.h"
+#include "toggleButton.h"
 
 #include <nanogui/nanogui.h>
+#include <nanogui/screen.h>
 
 #include "../../Peripherals/network.h"
 
@@ -31,11 +33,22 @@ NetworkSettingsPage::NetworkSettingsPage(nanogui::Widget *parent,
     dhcpLabel->set_font_size(16);
     dhcpLabel->set_color(nanogui::Color(150, 180, 200, 255));
 
-    m_dhcpCheckbox = new nanogui::CheckBox(dhcpRow, "", [this](bool state) {
-        g_settings->at(0)->getNetwork()->setDhcp(state);
-        updateStaticFieldsVisibility();
-    });
-    m_dhcpCheckbox->set_checked(g_settings->at(0)->getNetwork()->getDhcp());
+    m_dhcpEnabled = g_settings->at(0)->getNetwork()->getDhcp();
+    m_dhcpToggleButton = new ToggleButton(
+        dhcpRow,
+        "ON  [====]",
+        "[====]  OFF",
+        m_dhcpEnabled,
+        [this](bool enabled) {
+            applyDhcpState(enabled);
+
+            if (auto *nanoScreen = screen()) {
+                nanoScreen->perform_layout();
+                nanoScreen->redraw();
+            }
+        });
+    m_dhcpToggleButton->set_fixed_size(nanogui::Vector2i(130, 32));
+    applyDhcpState(m_dhcpEnabled);
 
     m_staticConfigPanel = new nanogui::Widget(this);
     m_staticConfigPanel->set_layout(new nanogui::GroupLayout(0, 6, 0, 0));
@@ -91,7 +104,21 @@ NetworkSettingsPage::NetworkSettingsPage(nanogui::Widget *parent,
 
 void NetworkSettingsPage::updateStaticFieldsVisibility()
 {
-    if (m_staticConfigPanel && m_dhcpCheckbox) {
-        m_staticConfigPanel->set_visible(!m_dhcpCheckbox->checked());
+    if (m_staticConfigPanel) {
+        m_staticConfigPanel->set_visible(!m_dhcpEnabled);
     }
+}
+
+void NetworkSettingsPage::applyDhcpState(bool enabled)
+{
+    m_dhcpEnabled = enabled;
+    g_settings->at(0)->getNetwork()->setDhcp(enabled);
+
+    if (m_dhcpToggleButton) {
+        if (m_dhcpToggleButton->state() != enabled) {
+            m_dhcpToggleButton->setState(enabled);
+        }
+    }
+
+    updateStaticFieldsVisibility();
 }

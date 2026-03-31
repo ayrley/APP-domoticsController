@@ -9,10 +9,11 @@
 
 namespace nanogui
 {
-class CheckBox;
 class TextBox;
 } // namespace nanogui
 
+class DomeButton;
+class ToggleButton;
 
 class NetworkSettingsPage : public nanogui::Widget
 {
@@ -20,7 +21,8 @@ public:
     explicit NetworkSettingsPage(nanogui::Widget *parent, std::function<void()> onBack);
 
 private:
-    nanogui::CheckBox *m_dhcpCheckbox{nullptr};
+    ToggleButton *m_dhcpToggleButton{nullptr};
+    bool m_dhcpEnabled{true};
     nanogui::TextBox *m_ipAddressBox{nullptr};
     nanogui::TextBox *m_netmaskBox{nullptr};
     nanogui::TextBox *m_gatewayBox{nullptr};
@@ -29,6 +31,7 @@ private:
     nanogui::Widget *m_staticConfigPanel{nullptr};
     std::function<void()> m_onBack;
 
+    void applyDhcpState(bool enabled);
     void updateStaticFieldsVisibility();
 };
 
