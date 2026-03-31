@@ -23,10 +23,13 @@ public:
 	                   std::function<void()> onBadgesChanged = nullptr);
 
 	void refresh();
+	void perform_layout(NVGcontext *ctx) override;
 
 private:
 	void buildBadgeList();
 	void populateForm(const std::string &badgeFile);
+	void refreshBadgeSelection();
+	void startNewBadge();
 	void clearForm();
 	void saveBadge();
 	void removeBadge();
@@ -42,6 +45,7 @@ private:
 	nanogui::TextBox *m_firstNameBox{nullptr};
 	nanogui::TextBox *m_lastNameBox{nullptr};
 	nanogui::TextBox *m_badgeNumberBox{nullptr};
+	DomeButton       *m_addBadgeButton{nullptr};
 
 	std::vector<DomeButton *> m_badgeButtons;
 };
