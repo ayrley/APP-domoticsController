@@ -49,6 +49,12 @@ public:
     void setIpAddress(const std::string &ipAddress);
     void setNetmask(const std::string &netmask);
 
+    std::string getIpAddress() const { return m_ipAddress; }
+    std::string getNetmask() const { return m_netmask; }
+    std::string getGateway() const { return m_gateway; }
+    std::string getDns1() const { return m_dns1; }
+    std::string getDns2() const { return m_dns2; }
+
     bool getDhcp();
 };
 
