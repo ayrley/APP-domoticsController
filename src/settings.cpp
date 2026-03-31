@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 
+#include "debug.h"
 #include "network.h"
 #include "settings.h"
 
@@ -15,7 +16,7 @@ Settings::Settings()
 {
     this->m_readers = new std::vector<Reader *>();
     this->m_actions = new std::vector<Action *>();
-    this->m_settingsFile = "/etc/factory.settigetReadersngs.domotics";
+    this->m_settingsFile = "/etc/factory.settings.domotics";
     this->m_network = new Network();
     this->read();
 }
@@ -87,9 +88,29 @@ int Settings::read()
 {
     std::ifstream jsonFile(this->m_settingsFile);
 
-    this->m_settings = json::parse(jsonFile);
-    if (this->m_settings.is_discarded())
+    std::cout << "Reading settings from file: " << this->m_settingsFile << std::endl;
+
+    if (!jsonFile.is_open()) {
+        ERR("Unable to open settings file: " + this->m_settingsFile);
         return -ENOENT;
+    }
+
+    if (jsonFile.peek() == std::ifstream::traits_type::eof()) {
+        ERR("Settings file is empty: " + this->m_settingsFile);
+        return -ENOENT;
+    }
+
+    try {
+        this->m_settings = json::parse(jsonFile);
+    } catch (const std::exception &e) {
+        ERR("Failed to parse settings file '" + this->m_settingsFile + "': " + e.what());
+        return -ENOENT;
+    }
+
+    if (this->m_settings.is_discarded()) {
+        ERR("Discarded JSON while reading settings file: " + this->m_settingsFile);
+        return -ENOENT;
+    }
 
     this->parseSettingsType();
     this->parseReaders();
@@ -123,6 +144,7 @@ int Settings::write()
 int Settings::write(std::string settingsFile)
 {
     this->setSettingsFile(settingsFile);
+    this->write();
     return 0;
 }
 
