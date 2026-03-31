@@ -75,7 +75,7 @@ int loadSettings()
     factorySettingsStream >> factorySettingsFile;
 
     Settings *factory = new Settings(factorySettingsFile);
-    Settings *user;
+    factory->parse();
 
     bool settingsExist = std::filesystem::exists(userSettingsFile);
 
@@ -84,7 +84,8 @@ int loadSettings()
     if (!settingsExist)
         std::filesystem::copy(factorySettingsFile, userSettingsFile);
 
-    user = new Settings(userSettingsFile);
+    Settings *user = new Settings(userSettingsFile);
+    user->parse();
 
     if (user->getType() != SET_USER) {
         user->setType(SET_USER);
@@ -92,9 +93,6 @@ int loadSettings()
     }
 
     g_settings->push_back(user);
-
-    factory->parse();
-    user->parse();
 
     return ret;
 }
@@ -129,7 +127,28 @@ int loadIos()
     for (const auto &entry : std::filesystem::directory_iterator(iosDir)) {
         json ioFileObject;
         std::ifstream jsonFile(entry.path());
-        ioFileObject = json::parse(jsonFile);
+
+        if (!jsonFile.is_open()) {
+            ERR("Unable to open IO config: " + entry.path().string());
+            continue;
+        }
+
+        if (jsonFile.peek() == std::ifstream::traits_type::eof()) {
+            ERR("Skipping empty IO config: " + entry.path().string());
+            continue;
+        }
+
+        try {
+            ioFileObject = json::parse(jsonFile);
+        } catch (const std::exception &e) {
+            ERR("Skipping invalid IO config '" + entry.path().string() + "': " + e.what());
+            continue;
+        }
+
+        if (!ioFileObject.contains("IOs") || !ioFileObject["IOs"].is_array()) {
+            ERR("Skipping IO config without array 'IOs': " + entry.path().string());
+            continue;
+        }
 
         for (auto &singleIo : ioFileObject["IOs"].items()) {
             IO *io = new IO();
