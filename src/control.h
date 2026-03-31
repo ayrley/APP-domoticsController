@@ -3,8 +3,6 @@
 
 #include "settings.h"
 
-// Domotics Operations and Monitoring Engine
-
 #define DEBUG
 
 int main(void);

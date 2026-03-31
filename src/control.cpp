@@ -232,10 +232,11 @@ int runGui(Proximity &proximitySensor)
         nanogui::init();
         Screen screen(1024, 600, DIR_SHARED "badges", []() {
 			reloadBadgesCache();
-			LOG("Badges cache reloaded"); }, [&backlight, wakeBrightness]() {
+			LOG("Badges cache reloaded"); }, [&backlight, &proximitySensor, wakeBrightness]() {
 			if (backlight) {
 				backlight->setBrightness(wakeBrightness);
-			} });
+			}
+			proximitySensor.resetAbsenceGrace(); });
         proximitySensor.setDetectionHandler([&screen, &backlight, &lastBacklightPresence, &hasLastBacklightPresence, wakeBrightness](bool detected) {
             if (backlight && (!hasLastBacklightPresence || lastBacklightPresence != detected)) {
                 backlight->setBrightness(detected ? wakeBrightness : SCREENSAVER_BACKLIGHT_BRIGHTNESS);
