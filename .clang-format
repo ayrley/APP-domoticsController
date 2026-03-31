@@ -1,0 +1,8 @@
+BasedOnStyle: llvm
+SortIncludes: true
+IndentWidth: 4
+ColumnLimit: 0
+BreakBeforeBraces: Linux
+AccessModifierOffset: -4
+BreakConstructorInitializers: AfterColon
+InsertNewlineAtEOF: true
