@@ -19,6 +19,9 @@ class DefaultPage : public nanogui::Widget
 public:
     explicit DefaultPage(nanogui::Widget *parent, std::function<void()> onHome);
     void perform_layout(NVGcontext *ctx) override;
+    bool mouse_button_event(const nanogui::Vector2i &p, int button, bool down,
+                            int modifiers) override;
+    void setActivityCallback(std::function<void()> onActivity);
 
 protected:
     void setPageTitle(const std::string &title);
@@ -29,6 +32,7 @@ private:
     nanogui::Label *m_titleLabel{nullptr};
     NestedScrollPanel *m_scrollPanel{nullptr};
     nanogui::Widget *m_contentPanel{nullptr};
+    std::function<void()> m_onActivity;
 };
 
 #endif

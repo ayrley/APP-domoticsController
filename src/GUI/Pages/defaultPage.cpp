@@ -33,6 +33,20 @@ void DefaultPage::setPageTitle(const std::string &title)
     }
 }
 
+void DefaultPage::setActivityCallback(std::function<void()> onActivity)
+{
+    m_onActivity = std::move(onActivity);
+}
+
+bool DefaultPage::mouse_button_event(const nanogui::Vector2i &p, int button, bool down,
+                                     int modifiers)
+{
+    if (down && m_onActivity) {
+        m_onActivity();
+    }
+    return Widget::mouse_button_event(p, button, down, modifiers);
+}
+
 void DefaultPage::perform_layout(NVGcontext *ctx)
 {
     constexpr int kOuterMargin = 16;
