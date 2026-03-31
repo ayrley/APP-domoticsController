@@ -34,9 +34,9 @@ public:
 
     void fromJson(const json &jsonObject);
     void execute();
-    ;
-
     void start();
+
+    json getJson();
 
     std::string getName() { return this->m_name; }
 };

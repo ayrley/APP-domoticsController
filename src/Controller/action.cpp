@@ -15,6 +15,34 @@ Action::Action()
 {
 }
 
+json Action::getJson()
+{
+    json object = {};
+    object += json::object_t::value_type("name", this->m_name);
+
+    if (this->m_input.getName() != "") {
+        object += json::object_t::value_type("input", this->m_input.getName());
+        if (this->m_inputType == IN_IP) {
+            object += json::object_t::value_type("input_type", "IP");
+        } else if (this->m_inputType == IN_GPIO) {
+            object += json::object_t::value_type("input_type", "GPIO");
+        }
+    }
+
+    json outputsJson = json::array();
+    for (auto &singleOutput : this->m_outputs) {
+        json outputJson = {};
+        outputJson += json::object_t::value_type("output", singleOutput.getIo()->getName());
+        if (singleOutput.getDuration() > 0) {
+            outputJson += json::object_t::value_type("duration", singleOutput.getDuration());
+        }
+        outputsJson.push_back(outputJson);
+    }
+    object += json::object_t::value_type("outputs", outputsJson);
+
+    return object;
+}
+
 void Action::fromJson(const json &jsonObject)
 {
     try {

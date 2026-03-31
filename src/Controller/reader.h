@@ -74,6 +74,8 @@ public:
     void setBadges(std::vector<Badge *> *badges);
     void fromJson(const json &jsonObject);
 
+    json getJson();
+
     std::string getName();
     std::string getLocation();
 

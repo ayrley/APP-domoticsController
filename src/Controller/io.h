@@ -48,6 +48,8 @@ public:
     void set();
     void set(bool high);
 
+    json getJson();
+
     int get();
 };
 

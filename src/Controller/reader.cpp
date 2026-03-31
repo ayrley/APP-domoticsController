@@ -30,6 +30,23 @@ Reader::~Reader()
 {
 }
 
+json Reader::getJson()
+{
+    json object = {};
+    object += json::object_t::value_type("name", this->m_readerName);
+    object += json::object_t::value_type("location", this->m_readerLocation);
+    object += json::object_t::value_type("location_type", this->m_readerLocationType == RDR_LOC_IP ? "IP" : "LOCAL");
+    object += json::object_t::value_type("type", this->m_readerType == RDR_OSDP ? "OSDP" : "WIEGAND");
+    if (this->m_grantedAction) {
+        object += json::object_t::value_type("granted", this->m_grantedAction->getJson());
+    }
+    if (this->m_deniedAction) {
+        object += json::object_t::value_type("denied", this->m_deniedAction->getJson());
+    }
+
+    return object;
+}
+
 void Reader::setBadges(std::vector<Badge *> *badges)
 {
     this->m_badges = badges;

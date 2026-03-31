@@ -166,6 +166,31 @@ int IO::get()
     return -1;
 }
 
+json IO::getJson()
+{
+    json object = {};
+    object += json::object_t::value_type("name", this->m_name);
+    object += json::object_t::value_type("location", this->m_location);
+
+    std::string locationTypeStr;
+    if (this->m_locationType == IO_LOC_LOCAL)
+        locationTypeStr = "LOCAL";
+    else if (this->m_locationType == IO_LOC_IP)
+        locationTypeStr = "IP";
+    object += json::object_t::value_type("type", locationTypeStr);
+
+    std::string directionStr;
+    if (this->m_direction == IO_DIR_IN)
+        directionStr = "IN";
+    else if (this->m_direction == IO_DIR_AIN)
+        directionStr = "AIN";
+    else if (this->m_direction == IO_DIR_OUT)
+        directionStr = "OUT";
+    object += json::object_t::value_type("direction", directionStr);
+
+    return object;
+}
+
 void IO::fromJson(const json &jsonObject)
 {
     try {
