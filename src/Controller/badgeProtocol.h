@@ -4,11 +4,15 @@
 #include <cstdint>
 #include <string>
 
+#include "json.hpp"
+
+using json = nlohmann::json;
+
 class BadgeProtocol
 {
 public:
     bool parseBadgeFromPayload(const std::string &payload, uint64_t &badge) const;
-    std::string buildReply(bool validBadge, uint64_t badge, const std::string &actionName,
+    std::string buildReply(bool validBadge, uint64_t badge, const json &actionOutputs,
                            bool validPayload) const;
 };
 

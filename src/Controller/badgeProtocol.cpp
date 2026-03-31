@@ -80,12 +80,12 @@ bool BadgeProtocol::parseBadgeFromPayload(const std::string &payload, uint64_t &
 }
 
 std::string BadgeProtocol::buildReply(bool validBadge, uint64_t badge,
-                                      const std::string &actionName, bool validPayload) const
+                                      const json &actionOutputs, bool validPayload) const
 {
     json reply = {
         {"valid", validBadge},
         {"badge", badge},
-        {"action", actionName}};
+        {"action", actionOutputs}};
 
     if (!validPayload)
         reply["error"] = "invalid badge payload";

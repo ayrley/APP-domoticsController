@@ -220,7 +220,7 @@ void Reader::handleNetworkReader()
 
         if (!validPayload) {
             DBG("Invalid badge payload received: " + payload);
-            return protocol.buildReply(false, 0, "", false);
+            return protocol.buildReply(false, 0, json::array(), false);
         }
 
         bool validBadge = false;
@@ -246,8 +246,16 @@ void Reader::handleNetworkReader()
             actionToExecute->execute();
         }
 
+        json actionOutputs = json::array();
+        if (actionToExecute) {
+            json actionJson = actionToExecute->getJson();
+            if (actionJson.contains("outputs")) {
+                actionOutputs = actionJson["outputs"];
+            }
+        }
+
         return protocol.buildReply(validBadge, badge,
-                                   actionToExecute ? actionToExecute->getName() : "",
+                                   actionOutputs,
                                    validPayload);
     });
 }
