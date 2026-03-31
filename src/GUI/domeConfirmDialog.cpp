@@ -42,10 +42,10 @@ DomeConfirmDialog::DomeConfirmDialog(nanogui::Widget *parent,
 	leftSpacer->set_fixed_size(nanogui::Vector2i(48, 1));
 
 	auto *cancelButton = new DomeButton(buttonRow, cancelLabel, [this, onCancel]() {
-		dispose();
 		if (onCancel) {
 			onCancel();
 		}
+		dispose();
 	});
 	cancelButton->set_fixed_size(nanogui::Vector2i(150, 38));
 
@@ -53,13 +53,13 @@ DomeConfirmDialog::DomeConfirmDialog(nanogui::Widget *parent,
 	middleSpacer->set_fixed_size(nanogui::Vector2i(12, 1));
 
 	auto *confirmButton = new DomeButton(buttonRow, confirmLabel, [this, onConfirm]() {
-		dispose();
 		if (onConfirm) {
 			onConfirm();
 		}
+		dispose();
 	});
 	confirmButton->set_fixed_size(nanogui::Vector2i(170, 38));
-	confirmButton->set_home_style(true);
+	confirmButton->setHomeStyle(true);
 
 	auto *rightSpacer = new nanogui::Widget(buttonRow);
 	rightSpacer->set_fixed_size(nanogui::Vector2i(48, 1));
