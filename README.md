@@ -1,33 +1,185 @@
 # domoticsController
 
-`domoticsController` is a small C++ application for domotics/home-automation control logic. It loads settings, I/O definitions, badges, and readers from local configuration files and starts the configured reader handlers.
+`domoticsController` is a C++17 home automation controller. It loads settings, GPIO/network I/O, readers, badges, and actions from JSON configuration and then runs continuously.
 
-It can be run on any target, as long as every GPIO, wiegandport or serial port is defined in the correct json files.
+Core features:
+
+- Local reader support (Wiegand)
+- Network reader support over TCP
+- Badge-based access checks
+- Granted/denied action execution
+- NanoGUI-based runtime UI
+
+## Runtime architecture
+
+At startup, the controller loads:
+
+- IO definitions
+- Badge files
+- Settings (user + factory)
+- Readers and actions
+
+Readers run on dedicated threads and trigger actions when badge access is granted or denied.
+
+## Project layout
+
+Important locations:
+
+- `src/control.cpp`: Application entrypoint and startup sequence
+- `src/settings.cpp`: Settings parsing and object construction
+- `src/Controller/reader.cpp`: Reader business logic
+- `src/Controller/tcpServer.cpp`: Reusable TCP transport server
+- `src/Controller/badgeProtocol.cpp`: Badge payload parsing and response formatting
+- `src/GUI/`: UI components
+- `factory.settings.domotics`: Factory defaults
+- `user.settings.domotics`: Runtime/user overrides
+
+## Configuration
+
+Main settings file structure:
+
+```json
+{
+	"type": "USER",
+	"version": 1,
+	"network": {
+		"dhcp": true,
+		"dns1": "",
+		"dns2": "",
+		"gateway": "",
+		"ipAddress": "",
+		"netmask": ""
+	},
+	"readers": [],
+	"actions": []
+}
+```
+
+### Reader types
+
+- `location_type: "LOCAL"`: Reader connected to local hardware
+- `location_type: "IP"`: Reader served over TCP
+
+- `type: "WIEGAND"`: Wiegand reader
+- `type: "OSDP"`: Reserved placeholder in current codebase
+
+### Network reader location format
+
+For `location_type: "IP"`, `location` must be one of:
+
+- `"<port>"` (binds to `0.0.0.0:<port>`)
+- `"<ipv4>:<port>"` (for example `"127.0.0.1:9000"`)
+
+Example reader config:
+
+```json
+{
+	"name": "net-reader-1",
+	"location": "0.0.0.0:9000",
+	"location_type": "IP",
+	"type": "WIEGAND",
+	"granted": {
+		"name": "AccessGranted",
+		"outputs": [
+			{
+				"output": "out_green",
+				"duration": 1000
+			}
+		]
+	},
+	"denied": {
+		"name": "AccessDenied",
+		"outputs": [
+			{
+				"output": "out_red",
+				"duration": 1000
+			}
+		]
+	}
+}
+```
+
+## TCP badge protocol
+
+When a network reader is configured, the controller listens on the configured TCP socket.
+
+Each request should contain one badge payload. The response is a JSON object containing:
+
+- `valid`: `true` when badge is known
+- `badge`: parsed badge number (or `0` if parse failed)
+- `action`: executed action name (`granted` or `denied` action)
+- `error`: included only on invalid payload
+
+### Supported request formats
+
+Plain numeric payload:
+
+```text
+123456
+```
+
+JSON payload with `badge`:
+
+```json
+{"badge":123456}
+```
+
+JSON payload with `badgeNumber`:
+
+```json
+{"badgeNumber":"123456"}
+```
+
+### Example responses
+
+Valid badge:
+
+```json
+{"valid":true,"badge":123456,"action":"AccessGranted"}
+```
+
+Invalid badge:
+
+```json
+{"valid":false,"badge":123456,"action":"AccessDenied"}
+```
+
+Invalid payload:
+
+```json
+{"valid":false,"badge":0,"action":"AccessDenied","error":"invalid badge payload"}
+```
+
+### Quick test with netcat
+
+Send plain badge:
+
+```bash
+printf '123456\n' | nc 127.0.0.1 9000
+```
+
+Send JSON badge:
+
+```bash
+printf '{"badge":123456}\n' | nc 127.0.0.1 9000
+```
 
 ## GUI
 
-The application includes a NanoGUI-based dashboard that displays:
+The application includes a NanoGUI dashboard.
 
-- Current controller status
-- CPU usage
-- RAM usage
+Backend selection is runtime-based:
 
-The GUI backend is selected at runtime:
-
-- If a display server is available (`DISPLAY` or `WAYLAND_DISPLAY`), it uses a normal desktop window.
-- If no display server is detected, it attempts to use the GLFW null platform (framebuffer/headless style).
-
-GUI sources are located under:
-
-- `src/screen.cpp`
-- `src/GUI/`
+- If `DISPLAY` or `WAYLAND_DISPLAY` is present, it uses desktop window mode
+- Otherwise it attempts GLFW null platform mode (framebuffer/headless style)
 
 ## Build with CMake
 
 ### Requirements
 
 - CMake 3.16+
-- A C++17 compiler (for example `g++`)
+- C++17 compiler
+- NanoGUI available at the path in `NANOGUI_ROOT` (default in `CMakeLists.txt`)
 
 ### Configure and build
 
@@ -36,27 +188,23 @@ cmake -S . -B build-cmake
 cmake --build build-cmake -j
 ```
 
-### Build helper script
-
-A helper script is provided to configure and build in one command:
+Helper script:
 
 ```bash
 ./build_cmake.sh
 ```
 
-You can pass extra CMake configure options to the script:
+With extra CMake arguments:
 
 ```bash
 ./build_cmake.sh -DCMAKE_BUILD_TYPE=Release
 ```
 
-The executable is generated at:
+Binary path:
 
 - `build-cmake/control`
 
-### Optional CMake targets
-
-Run linter target:
+Linter target:
 
 ```bash
 cmake --build build-cmake --target control-linter
@@ -67,7 +215,7 @@ cmake --build build-cmake --target control-linter
 ### Requirements
 
 - `make`
-- A C++ compiler available as `$(CXX)` (for example `g++`)
+- C++ compiler available via `$(CXX)`
 
 ### Build
 
@@ -75,22 +223,21 @@ cmake --build build-cmake --target control-linter
 make
 ```
 
-The Make build also compiles GUI sources from `src/GUI/*.cpp`.
-
-The executable is generated at:
+Binary path:
 
 - `./control`
 
-### Useful Make targets
-
-Clean build artifacts:
+Useful targets:
 
 ```bash
 make clean
-```
-
-Run linter target:
-
-```bash
 make control-linter
 ```
+
+## Notes
+
+- Badge validation compares incoming badge number with configured `badgeNumber` entries from badge files.
+- Network handling is split for reuse:
+	- `TcpServer`: transport
+	- `BadgeProtocol`: payload and reply protocol
+	- `Reader`: access decision and action dispatch
