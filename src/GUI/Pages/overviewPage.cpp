@@ -1,14 +1,33 @@
 #include "overviewPage.h"
 
 #include "metricBlock.h"
+#include "../Buttons/domeButton.h"
+#include "../domeConfirmDialog.h"
 
 #include <nanogui/nanogui.h>
+#include "../../Peripherals/system.h"
 
 OverviewPage::OverviewPage(nanogui::Widget *parent,
                            std::function<void()> onHome) :
     DefaultPage(parent, std::move(onHome))
 {
     setPageTitle("System Overview");
+
+    m_rebootButton = new DomeButton(this, "REBOOT", [this]() {
+        new DomeConfirmDialog(
+            screen(),
+            "Reboot System",
+            "Are you sure?",
+            "The system will restart immediately.",
+            "REBOOT",
+            "Cancel",
+            []() { System::reboot(); },
+            nullptr);
+    });
+    m_rebootButton->setHomeStyle(true);
+    m_rebootButton->setPalette(0.72f, 0.10f, 0.10f, 1.0f, 0.28f, 0.28f);
+    m_rebootButton->set_fixed_size(nanogui::Vector2i(128, 42));
+
     contentPanel()->set_layout(new nanogui::GroupLayout(0, 6, 14, 0));
 
     m_statusLabel = new nanogui::Label(contentPanel(), "Status: Running", "sans-bold");
@@ -19,6 +38,18 @@ OverviewPage::OverviewPage(nanogui::Widget *parent,
 
     m_ramLabel = createMetricBlock(contentPanel(), "RAM Usage", "collecting...", &m_ramBar);
     m_ramLabel->set_font_size(18);
+}
+
+void OverviewPage::perform_layout(NVGcontext *ctx)
+{
+    DefaultPage::perform_layout(ctx);
+    if (m_rebootButton) {
+        constexpr int kMargin = 16;
+        nanogui::Vector2i btnSize = m_rebootButton->fixed_size();
+        m_rebootButton->set_position(
+            nanogui::Vector2i(m_size.x() - btnSize.x() - kMargin,
+                              m_size.y() - btnSize.y() - kMargin));
+    }
 }
 
 void OverviewPage::setStatus(const std::string &status)

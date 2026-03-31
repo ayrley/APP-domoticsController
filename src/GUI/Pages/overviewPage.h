@@ -5,6 +5,7 @@
 #include <string>
 
 #include "defaultPage.h"
+#include "../Buttons/domeButton.h"
 
 namespace nanogui
 {
@@ -21,6 +22,7 @@ public:
     void setStatus(const std::string &status);
     void setCpu(const std::string &cpuCaption, float fraction);
     void setRam(const std::string &ramCaption, float fraction);
+    void perform_layout(NVGcontext *ctx) override;
 
 private:
     nanogui::Label *m_statusLabel{nullptr};
@@ -28,6 +30,7 @@ private:
     nanogui::Label *m_ramLabel{nullptr};
     nanogui::ProgressBar *m_cpuBar{nullptr};
     nanogui::ProgressBar *m_ramBar{nullptr};
+    DomeButton *m_rebootButton{nullptr};    
 };
 
 #endif
