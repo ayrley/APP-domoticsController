@@ -8,11 +8,8 @@ SettingsPage::SettingsPage(nanogui::Widget *parent,
                            std::function<void()> onHome,
                            std::function<void()> onSave)
     : DefaultPage(parent, std::move(onHome)) {
-	contentPanel()->set_layout(new nanogui::GroupLayout(15, 6, 18, 12));
-
-	auto *header = new nanogui::Label(contentPanel(), "System Settings", "sans-bold");
-	header->set_font_size(30);
-	header->set_color(nanogui::Color(0, 235, 255, 255));
+	setPageTitle("System Settings");
+	contentPanel()->set_layout(new nanogui::GroupLayout(0, 6, 18, 0));
 
 	auto *desc = new nanogui::Label(
 	    contentPanel(),
