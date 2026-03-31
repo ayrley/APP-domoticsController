@@ -29,7 +29,8 @@ namespace
 constexpr int SCREENSAVER_BACKLIGHT_BRIGHTNESS = 12;
 }
 
-std::vector<Settings *> *g_settings = new std::vector<Settings *>();
+Settings *g_userSettings = nullptr;
+Settings *g_factorySettings = nullptr;
 std::vector<Badge *> *g_badges = new std::vector<Badge *>();
 std::vector<IO *> *g_ios = new std::vector<IO *>();
 std::vector<Action *> *g_actions = new std::vector<Action *>();
@@ -46,18 +47,6 @@ void reloadBadgesCache()
 {
     clearBadgesCache();
     loadBadges();
-}
-
-Settings *getSetting(enum settingsType settingType)
-{
-    for (Settings *setting : *g_settings) {
-        if (setting->getType() == settingType)
-            return setting;
-    }
-
-    std::cerr << "No settings found for type: " << settingType << std::endl;
-
-    return nullptr;
 }
 
 int loadSettings()
@@ -79,8 +68,6 @@ int loadSettings()
 
     bool settingsExist = std::filesystem::exists(userSettingsFile);
 
-    g_settings->push_back(factory);
-
     if (!settingsExist)
         std::filesystem::copy(factorySettingsFile, userSettingsFile);
 
@@ -91,8 +78,8 @@ int loadSettings()
         user->setType(SET_USER);
         user->write();
     }
-
-    g_settings->push_back(user);
+    g_userSettings = user;
+    g_factorySettings = factory;
 
     return ret;
 }
@@ -163,9 +150,8 @@ int loadIos()
 int startReaders()
 {
     int ret = 0;
-    Settings *userSetting = getSetting(SET_USER);
 
-    for (auto singleReader : *userSetting->getReaders()) {
+    for (auto singleReader : *g_userSettings->getReaders()) {
         singleReader->start();
     }
 
@@ -175,9 +161,8 @@ int startReaders()
 int startActions()
 {
     int ret = 0;
-    Settings *userSetting = getSetting(SET_USER);
 
-    for (auto singleAction : *userSetting->getActions()) {
+    for (auto singleAction : *g_userSettings->getActions()) {
         singleAction->start();
     }
 
