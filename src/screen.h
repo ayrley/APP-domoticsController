@@ -11,27 +11,27 @@ class Screen;
 class Widget;
 }
 
-class JarvisBackground;
+class DomeBackground;
 class BadgePage;
 class OverviewPage;
 class SettingsPage;
 class ManualControlPage;
-class JarvisButton;
+class OrbitButton;
 
 class Screen {
 private:
 	nanogui::Screen *m_screen;
-	JarvisBackground *m_background;
+	DomeBackground *m_background;
 
 	nanogui::Widget *m_landingPanel;
 	OverviewPage    *m_overviewPage;
 	SettingsPage    *m_settingsPage;
 	ManualControlPage *m_manualControlPage;
 	BadgePage       *m_badgePage;
-	JarvisButton    *m_overviewOrbitButton;
-	JarvisButton    *m_badgesOrbitButton;
-	JarvisButton    *m_settingsOrbitButton;
-	JarvisButton    *m_manualOrbitButton;
+	OrbitButton     *m_overviewOrbitButton;
+	OrbitButton     *m_badgesOrbitButton;
+	OrbitButton     *m_settingsOrbitButton;
+	OrbitButton     *m_manualOrbitButton;
 	int              m_landingCenterX;
 	int              m_landingCenterY;
 	float            m_landingOrbitRadius;

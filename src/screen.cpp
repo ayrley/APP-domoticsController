@@ -1,9 +1,9 @@
 #include "screen.h"
 #include "system.h"
 
-#include "GUI/jarvisBackground.h"
-#include "GUI/Buttons/jarvisButton.h"
-#include "GUI/jarvisCore.h"
+#include "GUI/domeBackground.h"
+#include "GUI/Buttons/orbitButton.h"
+#include "GUI/domeCore.h"
 #include "GUI/Pages/badgePage.h"
 #include "GUI/Pages/manualControlPage.h"
 #include "GUI/Pages/overviewPage.h"
@@ -24,10 +24,10 @@ constexpr int PAGE_OVERVIEW = 2;
 constexpr int PAGE_SETTINGS = 3;
 constexpr int PAGE_MANUAL = 4;
 constexpr float PI = 3.14159265359f;
-constexpr float ORBIT_BASE_OVERVIEW = -PI * 0.5f;
-constexpr float ORBIT_BASE_BADGES = 0.0f;
-constexpr float ORBIT_BASE_MANUAL = PI * 0.5f;
-constexpr float ORBIT_BASE_SETTINGS = PI;
+constexpr float ORBIT_BASE_OVERVIEW = -PI * 0.75f;
+constexpr float ORBIT_BASE_BADGES = -PI * 0.25f;
+constexpr float ORBIT_BASE_MANUAL = PI * 0.25f;
+constexpr float ORBIT_BASE_SETTINGS = PI * 0.75f;
 }
 
 Screen::Screen(int width,
@@ -39,7 +39,7 @@ Screen::Screen(int width,
     m_stopStatsThread = false;
     const nanogui::Vector2i screenSize = m_screen->size();
 
-    m_background = new JarvisBackground(m_screen);
+    m_background = new DomeBackground(m_screen);
     m_background->set_position(nanogui::Vector2i(0, 0));
     m_background->set_fixed_size(nanogui::Vector2i(width, height));
 
@@ -54,7 +54,7 @@ Screen::Screen(int width,
     m_manualOrbitButton = nullptr;
     m_landingCenterX = width / 2;
     m_landingCenterY = height / 2;
-    m_landingOrbitRadius = 245.0f;
+    m_landingOrbitRadius = 200.0f;
 
     buildLandingPage();
     buildOverviewPage();
@@ -93,23 +93,29 @@ void Screen::buildLandingPage() {
     m_landingPanel->set_position(nanogui::Vector2i(0, 0));
     m_landingPanel->set_fixed_size(screenSize);
 
-    auto *title = new nanogui::Label(m_landingPanel, "DOMOTICS CONTROL", "sans-bold");
-    title->set_font_size(34);
-    title->set_color(nanogui::Color(0, 235, 255, 255));
-    title->set_position(nanogui::Vector2i(center.x() - 170, 34));
-
-    auto *core = new JarvisCore(m_landingPanel, "JARVIS");
+    auto *core = new DomeCore(m_landingPanel);
     core->set_fixed_size(nanogui::Vector2i(240, 240));
     core->set_position(nanogui::Vector2i(center.x() - 120, center.y() - 120));
 
-    m_overviewOrbitButton = new JarvisButton(m_landingPanel, "Overview", [this]() { switchPage(PAGE_OVERVIEW); });
-    m_badgesOrbitButton = new JarvisButton(m_landingPanel, "Badges", [this]() { switchPage(PAGE_BADGES); });
-    m_settingsOrbitButton = new JarvisButton(m_landingPanel, "Settings", [this]() { switchPage(PAGE_SETTINGS); });
-    m_manualOrbitButton = new JarvisButton(m_landingPanel, "Manual", [this]() { switchPage(PAGE_MANUAL); });
-    m_overviewOrbitButton->set_fixed_size(nanogui::Vector2i(118, 118));
-    m_badgesOrbitButton->set_fixed_size(nanogui::Vector2i(118, 118));
-    m_settingsOrbitButton->set_fixed_size(nanogui::Vector2i(118, 118));
-    m_manualOrbitButton->set_fixed_size(nanogui::Vector2i(118, 118));
+    m_overviewOrbitButton = new OrbitButton(m_landingPanel, "Overview", [this]() { switchPage(PAGE_OVERVIEW); });
+    m_badgesOrbitButton = new OrbitButton(m_landingPanel, "Badges", [this]() { switchPage(PAGE_BADGES); });
+    m_settingsOrbitButton = new OrbitButton(m_landingPanel, "Settings", [this]() { switchPage(PAGE_SETTINGS); });
+    m_manualOrbitButton = new OrbitButton(m_landingPanel, "Manual", [this]() { switchPage(PAGE_MANUAL); });
+
+    // Keep orbit spacing balanced around the core while respecting small-screen margins.
+    const float coreRadius = 120.0f;
+    const float buttonRadius = static_cast<float>(m_overviewOrbitButton->fixed_size().x()) * 0.5f;
+    const float desiredGap = 32.0f;
+    const float edgePadding = 48.0f;
+    const float desiredRadius = coreRadius + buttonRadius + desiredGap;
+    const float maxRadiusX = std::min(
+        static_cast<float>(center.x()) - edgePadding - buttonRadius,
+        static_cast<float>(sw - center.x()) - edgePadding - buttonRadius);
+    const float maxRadiusY = std::min(
+        static_cast<float>(center.y()) - edgePadding - buttonRadius,
+        static_cast<float>(sh - center.y()) - edgePadding - buttonRadius);
+    m_landingOrbitRadius = std::max(coreRadius + buttonRadius + 12.0f,
+                                    std::min(desiredRadius, std::min(maxRadiusX, maxRadiusY)));
 
     updateLandingOrbit(0.0f);
 }
@@ -119,7 +125,7 @@ void Screen::updateLandingOrbit(float phase) {
         return;
     }
 
-    auto placeButton = [this](JarvisButton *button, float baseAngle) {
+    auto placeButton = [this](OrbitButton *button, float baseAngle) {
         const float angle = baseAngle;
         const nanogui::Vector2i size = button->fixed_size();
         const float bx = static_cast<float>(m_landingCenterX) + std::cos(angle) * m_landingOrbitRadius - size.x() * 0.5f;
