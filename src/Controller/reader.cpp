@@ -218,10 +218,15 @@ void Reader::handleNetworkReader()
         uint64_t badge = 0;
         bool validPayload = protocol.parseBadgeFromPayload(payload, badge);
 
+        if (!validPayload) {
+            DBG("Invalid badge payload received: " + payload);
+            return protocol.buildReply(false, 0, "", false);
+        }
+
         bool validBadge = false;
         Action *actionToExecute = this->m_deniedAction;
 
-        if (validPayload && this->m_badges) {
+        if (this->m_badges != nullptr) {
             for (auto singleBadge : *this->m_badges) {
                 if (singleBadge && singleBadge->valid(badge)) {
                     validBadge = true;
@@ -229,19 +234,22 @@ void Reader::handleNetworkReader()
                     break;
                 }
             }
+        } else {
+            DBG("No badges loaded; access denied");
         }
 
-        if (!validBadge)
+        if (!validBadge) {
             actionToExecute = this->m_deniedAction;
+        }
 
-        if (actionToExecute)
+        if (actionToExecute) {
             actionToExecute->execute();
+        }
 
         return protocol.buildReply(validBadge, badge,
                                    actionToExecute ? actionToExecute->getName() : "",
                                    validPayload);
     });
-
 }
 
 void Reader::handleLocalReader()
