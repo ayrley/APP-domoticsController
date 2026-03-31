@@ -109,21 +109,15 @@ bool TcpServer::listenAndServe(const std::string &location, const RequestHandler
         }
 
         char rxBuffer[256] = {0};
-        while (true) {
-            ssize_t received = recv(clientFd, rxBuffer, sizeof(rxBuffer) - 1, 0);
-            if (received <= 0)
-                break;
-
+        ssize_t received = recv(clientFd, rxBuffer, sizeof(rxBuffer) - 1, 0);
+        if (received > 0) {
             rxBuffer[received] = '\0';
             std::string response = handler(std::string(rxBuffer));
             if (!response.empty() && response.back() != '\n') {
                 response += '\n';
             }
 
-            if (!this->sendAll(clientFd, response))
-                break;
-
-            memset(rxBuffer, 0, sizeof(rxBuffer));
+            this->sendAll(clientFd, response);
         }
 
         close(clientFd);
