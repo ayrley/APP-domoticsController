@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <exception>
 #include <cstdlib>
+#include <memory>
 #include <dlfcn.h>
 
 #include <stdint.h>
@@ -20,6 +21,12 @@
 #include "io.h"
 #include "screen.h"
 #include "debug.h"
+#include "backlight.h"
+#include "proximity.h"
+
+namespace {
+constexpr int SCREENSAVER_BACKLIGHT_BRIGHTNESS = 12;
+}
 
 std::vector<Settings *> *g_settings = new std::vector<Settings *>();
 std::vector<Badge *> *g_badges = new std::vector<Badge *>();
@@ -197,10 +204,22 @@ bool enableNullPlatformIfSupported()
 	return true;
 }
 
-int runGui()
+int runGui(Proximity &proximitySensor)
 {
 	int ret = 0;
 	bool useFramebufferGui = shouldUseFramebufferGui();
+	std::unique_ptr<Backlight> backlight;
+	int wakeBrightness = SCREENSAVER_BACKLIGHT_BRIGHTNESS;
+	bool lastBacklightPresence = false;
+	bool hasLastBacklightPresence = false;
+
+	try {
+		backlight = std::make_unique<Backlight>();
+		wakeBrightness = backlight->getBrightness();
+		LOG("Backlight control available");
+	} catch (const std::exception &e) {
+		ERR("Backlight control unavailable: " << e.what());
+	}
 
 	LOG("[GUI] Startup mode: "
 		      << (useFramebufferGui ? "framebuffer/null platform" : "desktop window (X11/Wayland)"));
@@ -215,12 +234,29 @@ int runGui()
 		Screen screen(1024, 600, DIR_SHARED "badges", []() {
 			reloadBadgesCache();
 			LOG("Badges cache reloaded");
+		}, [&backlight, wakeBrightness]() {
+			if (backlight) {
+				backlight->setBrightness(wakeBrightness);
+			}
 		});
+		proximitySensor.setDetectionHandler([&screen, &backlight, &lastBacklightPresence, &hasLastBacklightPresence, wakeBrightness](bool detected) {
+			if (backlight && (!hasLastBacklightPresence || lastBacklightPresence != detected)) {
+				backlight->setBrightness(detected ? wakeBrightness : SCREENSAVER_BACKLIGHT_BRIGHTNESS);
+				lastBacklightPresence = detected;
+				hasLastBacklightPresence = true;
+			}
+			nanogui::async([&screen, detected]() {
+				screen.setPresenceDetected(detected);
+			});
+		});
+		proximitySensor.start();
 		screen.render();
 		nanogui::run();
+		proximitySensor.stop();
 		nanogui::shutdown();
 	} catch (const std::exception &e) {
 		ERR("GUI startup failed: " << e.what());
+		proximitySensor.stop();
 		ret = 1;
 	}
 
@@ -229,6 +265,9 @@ int runGui()
 
 int main(void)
 {
+
+	Proximity proximitySensor;
+
 	loadIos();
 	LOG("IOs loaded");
 
@@ -244,6 +283,6 @@ int main(void)
 	startActions();
 	LOG("Actions started");
 
-	return runGui();
+	return runGui(proximitySensor);
 
 }
