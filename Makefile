@@ -9,6 +9,8 @@ OBJ_DIR := $(BUILD_DIR)/obj
 TARGET := $(BUILD_DIR)/$(NAME)
  
 SRCS	:= 	$(wildcard src/*.cpp) \
+			$(wildcard src/Controller/*.cpp) \
+			$(wildcard src/Peripherals/*.cpp) \
 			$(wildcard src/GUI/*.cpp) \
 			$(wildcard src/GUI/Buttons/*.cpp) \
 			$(wildcard src/GUI/Pages/*.cpp)
@@ -20,6 +22,8 @@ CXXFLAGS += -DNANOGUI_USE_OPENGL -DNANOGUI_SHARED -DNVG_SHARED
 
 INCS 	:= 	-I. \
 		-Isrc \
+		-Isrc/Controller \
+		-Isrc/Peripherals \
 		-Isrc/GUI \
 		-Isrc/GUI/Buttons \
 		-Isrc/GUI/Pages \
