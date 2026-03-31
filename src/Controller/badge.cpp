@@ -25,7 +25,23 @@ void Badge::takeAction(bool accessGranted)
 int Badge::parse()
 {
     std::ifstream jsonFile(this->m_badgeFile);
-    this->m_badge = json::parse(jsonFile);
+
+    if (!jsonFile.is_open()) {
+        DBG("Unable to open badge file: " + this->m_badgeFile);
+        return -ENOENT;
+    }
+
+    if (jsonFile.peek() == std::ifstream::traits_type::eof()) {
+        DBG("Badge file is empty, skipping: " + this->m_badgeFile);
+        return -ENOENT;
+    }
+
+    try {
+        this->m_badge = json::parse(jsonFile);
+    } catch (const std::exception &e) {
+        DBG("Badge parse failed for file '" + this->m_badgeFile + "': " + e.what());
+        return -ENOENT;
+    }
 
     if (this->m_badge.is_discarded())
         return -ENOENT;

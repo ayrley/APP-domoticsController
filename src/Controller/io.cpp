@@ -1,4 +1,5 @@
 #include <cerrno>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -9,6 +10,26 @@
 
 #include "debug.h"
 #include "io.h"
+
+namespace
+{
+int parseIntOrMinusOne(const char *buffer)
+{
+    if (!buffer || buffer[0] == '\0') {
+        return -1;
+    }
+
+    char *endPtr = nullptr;
+    errno = 0;
+    long value = std::strtol(buffer, &endPtr, 10);
+
+    if (endPtr == buffer || errno != 0) {
+        return -1;
+    }
+
+    return static_cast<int>(value);
+}
+} // namespace
 
 IO::IO()
 {
@@ -88,10 +109,21 @@ int IO::getAnalogIo()
     if (!fptr)
         return -1;
 
-    read(fptr, buffer, 8);
+    ssize_t bytesRead = read(fptr, buffer, 8);
     close(fptr);
 
-    return std::stoi(buffer);
+    if (bytesRead <= 0) {
+        DBG("Analog IO read failed for location: " + this->m_location);
+        return -1;
+    }
+
+    int parsedValue = parseIntOrMinusOne(buffer);
+    if (parsedValue < 0) {
+        DBG("Analog IO parse failed for location: " + this->m_location +
+            ", raw='" + std::string(buffer) + "'");
+    }
+
+    return parsedValue;
 }
 
 int IO::getDigitalIo()
@@ -104,10 +136,21 @@ int IO::getDigitalIo()
     if (!fptr)
         return -1;
 
-    read(fptr, buffer, 5);
+    ssize_t bytesRead = read(fptr, buffer, 5);
     close(fptr);
 
-    return std::stoi(buffer);
+    if (bytesRead <= 0) {
+        DBG("Digital IO read failed for location: " + gpioValue);
+        return -1;
+    }
+
+    int parsedValue = parseIntOrMinusOne(buffer);
+    if (parsedValue < 0) {
+        DBG("Digital IO parse failed for location: " + gpioValue +
+            ", raw='" + std::string(buffer) + "'");
+    }
+
+    return parsedValue;
 }
 
 int IO::get()
