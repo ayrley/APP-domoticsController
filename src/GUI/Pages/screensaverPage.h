@@ -21,6 +21,7 @@ public:
 
 private:
     nanogui::Label *m_titleLabel{nullptr};
+    nanogui::Label *m_subtitle{nullptr};
     nanogui::Label *m_hintLabel{nullptr};
     std::function<void()> m_onWakeRequest;
 };
