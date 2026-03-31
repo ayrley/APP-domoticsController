@@ -35,7 +35,22 @@
 					}
     			]
 			}
-    	}
+    	},
+		{
+            "name": "net-reader-1",
+            "location": "0.0.0.0:9000",
+            "location_type": "IP",
+            "type": "WIEGAND",
+            "granted": {
+                "name": "AccessGranted",
+                "outputs": []
+            },
+            "denied": {
+                "name": "AccessDenied",
+                "outputs": []
+            }
+        }
+
     ],
     "actions" : [
     	{
