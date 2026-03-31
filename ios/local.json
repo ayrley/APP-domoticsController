@@ -12,6 +12,18 @@
       "direction": "OUT",
       "name": "out_bel",
    	  "location": "/sys/class/gpio5"
+    },
+    {
+      "type": "LOCAL",
+      "direction": "OUT",
+      "name": "out_red",
+   	  "location": "/sys/class/gpio5"
+    },
+    {
+      "type": "LOCAL",
+      "direction": "OUT",
+      "name": "out_green",
+   	  "location": "/sys/class/gpio5"
     }
   ]
 }
