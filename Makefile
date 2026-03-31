@@ -39,9 +39,23 @@ LIBDIR	:= 	-L$(HOST_DIR)/usr/lib \
 
 LDFLAGS += -Wl,-rpath,$(NANOGUI_ROOT)
 
-.PHONY: all clean $(NAME)-linter
+BUILD ?= release
+
+ifeq ($(BUILD),debug)
+CXXFLAGS += -DDEBUG
+else
+CXXFLAGS +=
+endif
+
+.PHONY: all clean $(NAME)-linter debug release
 
 all: $(TARGET)
+
+debug:
+	$(MAKE) BUILD=debug all
+
+release:
+	$(MAKE) BUILD=release all
 
 $(NAME): $(TARGET)
 	@echo "Built $(TARGET)"
