@@ -1,10 +1,11 @@
 #include "defaultPage.h"
 
 #include "homeButton.h"
+#include "nestedScrollPanel.h"
 
 #include <algorithm>
 
-#include <nanogui/vscrollpanel.h>
+#include <nanogui/label.h>
 
 DefaultPage::DefaultPage(nanogui::Widget *parent, std::function<void()> onHome)
 	: nanogui::Widget(parent) {
@@ -16,13 +17,24 @@ DefaultPage::DefaultPage(nanogui::Widget *parent, std::function<void()> onHome)
 		}
 	});
 
-	m_scrollPanel = new nanogui::VScrollPanel(this);
+	m_titleLabel = new nanogui::Label(this, "", "sans-bold");
+	m_titleLabel->set_font_size(30);
+	m_titleLabel->set_color(nanogui::Color(0, 235, 255, 255));
+
+	m_scrollPanel = new NestedScrollPanel(this);
 	m_contentPanel = new nanogui::Widget(m_scrollPanel);
+}
+
+void DefaultPage::setPageTitle(const std::string &title) {
+	if (m_titleLabel) {
+		m_titleLabel->set_caption(title);
+	}
 }
 
 void DefaultPage::perform_layout(NVGcontext *ctx) {
 	constexpr int kOuterMargin = 16;
-	constexpr int kTopOffset = 64;
+	constexpr int kTitleY = 16;
+	constexpr int kTopOffset = 58;
 	constexpr int kBottomMargin = 14;
 	constexpr int kHomePadding = 14;
 	constexpr int kPageHeightScrollThreshold = 600;
@@ -31,6 +43,10 @@ void DefaultPage::perform_layout(NVGcontext *ctx) {
 		nanogui::Vector2i homeSize = m_homeButton->fixed_size();
 		m_homeButton->set_position(
 			nanogui::Vector2i(m_size.x() - homeSize.x() - kHomePadding, kHomePadding));
+	}
+
+	if (m_titleLabel) {
+		m_titleLabel->set_position(nanogui::Vector2i(kOuterMargin, kTitleY));
 	}
 
 	if (m_scrollPanel && m_contentPanel) {
