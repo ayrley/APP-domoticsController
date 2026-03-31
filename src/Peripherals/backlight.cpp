@@ -36,9 +36,9 @@ void Backlight::setBrightness(int value)
     if (!backlightWriteFile.is_open()) {
         throw std::runtime_error("Failed to open backlight control for writing at " + std::string(BACKLIGHT_PATH));
     }
-    
+
     backlightWriteFile << m_brightness << std::endl;
-    
+
     if (backlightWriteFile.fail()) {
         throw std::runtime_error("Failed to write backlight brightness");
     }

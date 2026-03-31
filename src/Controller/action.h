@@ -1,12 +1,12 @@
 #ifndef __ACTION_H
 #define __ACTION_H
 
-#include <string>
 #include <cstdint>
+#include <string>
 #include <vector>
 
-#include "io.h"
 #include "actionIo.h"
+#include "io.h"
 
 enum InputType {
     IN_GPIO = 0,
@@ -17,7 +17,7 @@ class Action
 {
 private:
     IO m_input;
-    
+
     std::vector<ActionIo> m_outputs;
 
     std::string m_name;
@@ -33,11 +33,12 @@ public:
     Action();
 
     void fromJson(const json &jsonObject);
-    void execute();;
+    void execute();
+    ;
 
     void start();
 
     std::string getName() { return this->m_name; }
 };
 
-#endif 
+#endif

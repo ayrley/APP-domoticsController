@@ -6,27 +6,29 @@
 
 #include <nanogui/widget.h>
 
-namespace nanogui {
+namespace nanogui
+{
 class Label;
 } // namespace nanogui
 
 class HomeButton;
 class NestedScrollPanel;
 
-class DefaultPage : public nanogui::Widget {
+class DefaultPage : public nanogui::Widget
+{
 public:
-	explicit DefaultPage(nanogui::Widget *parent, std::function<void()> onHome);
-	void perform_layout(NVGcontext *ctx) override;
+    explicit DefaultPage(nanogui::Widget *parent, std::function<void()> onHome);
+    void perform_layout(NVGcontext *ctx) override;
 
 protected:
-	void setPageTitle(const std::string &title);
-	nanogui::Widget *contentPanel() const { return m_contentPanel; }
+    void setPageTitle(const std::string &title);
+    nanogui::Widget *contentPanel() const { return m_contentPanel; }
 
 private:
-	HomeButton *m_homeButton{nullptr};
-	nanogui::Label *m_titleLabel{nullptr};
-	NestedScrollPanel *m_scrollPanel{nullptr};
-	nanogui::Widget *m_contentPanel{nullptr};
+    HomeButton *m_homeButton{nullptr};
+    nanogui::Label *m_titleLabel{nullptr};
+    NestedScrollPanel *m_scrollPanel{nullptr};
+    nanogui::Widget *m_contentPanel{nullptr};
 };
 
 #endif

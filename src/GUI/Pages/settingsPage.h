@@ -5,11 +5,12 @@
 
 #include "defaultPage.h"
 
-class SettingsPage : public DefaultPage {
+class SettingsPage : public DefaultPage
+{
 public:
-	explicit SettingsPage(nanogui::Widget *parent,
-	                      std::function<void()> onHome,
-	                      std::function<void()> onSave);
+    explicit SettingsPage(nanogui::Widget *parent,
+                          std::function<void()> onHome,
+                          std::function<void()> onSave);
 };
 
 #endif

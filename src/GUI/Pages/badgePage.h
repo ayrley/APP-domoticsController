@@ -7,7 +7,8 @@
 
 #include "defaultPage.h"
 
-namespace nanogui {
+namespace nanogui
+{
 class Label;
 class TextBox;
 class Screen;
@@ -15,39 +16,40 @@ class Screen;
 
 class DomeButton;
 
-class BadgePage : public DefaultPage {
+class BadgePage : public DefaultPage
+{
 public:
-	explicit BadgePage(nanogui::Widget     *parent,
-	                   const std::string   &badgesDir,
-	                   std::function<void()> onBack,
-	                   std::function<void()> onBadgesChanged = nullptr);
+    explicit BadgePage(nanogui::Widget *parent,
+                       const std::string &badgesDir,
+                       std::function<void()> onBack,
+                       std::function<void()> onBadgesChanged = nullptr);
 
-	void refresh();
-	void perform_layout(NVGcontext *ctx) override;
+    void refresh();
+    void perform_layout(NVGcontext *ctx) override;
 
 private:
-	void buildBadgeList();
-	void populateForm(const std::string &badgeFile);
-	void refreshBadgeSelection();
-	void startNewBadge();
-	void clearForm();
-	void saveBadge();
-	void removeBadge();
+    void buildBadgeList();
+    void populateForm(const std::string &badgeFile);
+    void refreshBadgeSelection();
+    void startNewBadge();
+    void clearForm();
+    void saveBadge();
+    void removeBadge();
 
-	std::string           m_badgesDir;
-	std::string           m_selectedBadgeFile;
-	std::function<void()> m_onBadgesChanged;
-	nanogui::Screen      *m_nanoScreen{nullptr};
+    std::string m_badgesDir;
+    std::string m_selectedBadgeFile;
+    std::function<void()> m_onBadgesChanged;
+    nanogui::Screen *m_nanoScreen{nullptr};
 
-	nanogui::Label   *m_statusLabel{nullptr};
-	nanogui::Widget  *m_badgeListPanel{nullptr};
-	nanogui::TextBox *m_fileNameBox{nullptr};
-	nanogui::TextBox *m_firstNameBox{nullptr};
-	nanogui::TextBox *m_lastNameBox{nullptr};
-	nanogui::TextBox *m_badgeNumberBox{nullptr};
-	DomeButton       *m_addBadgeButton{nullptr};
+    nanogui::Label *m_statusLabel{nullptr};
+    nanogui::Widget *m_badgeListPanel{nullptr};
+    nanogui::TextBox *m_fileNameBox{nullptr};
+    nanogui::TextBox *m_firstNameBox{nullptr};
+    nanogui::TextBox *m_lastNameBox{nullptr};
+    nanogui::TextBox *m_badgeNumberBox{nullptr};
+    DomeButton *m_addBadgeButton{nullptr};
 
-	std::vector<DomeButton *> m_badgeButtons;
+    std::vector<DomeButton *> m_badgeButtons;
 };
 
 #endif

@@ -5,16 +5,18 @@
 
 #include "defaultPage.h"
 
-namespace nanogui {
+namespace nanogui
+{
 class Label;
 }
 
-class ManualControlPage : public DefaultPage {
+class ManualControlPage : public DefaultPage
+{
 public:
-	explicit ManualControlPage(nanogui::Widget *parent, std::function<void()> onHome);
+    explicit ManualControlPage(nanogui::Widget *parent, std::function<void()> onHome);
 
 private:
-	nanogui::Label *m_statusLabel{nullptr};
+    nanogui::Label *m_statusLabel{nullptr};
 };
 
 #endif

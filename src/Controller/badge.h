@@ -1,8 +1,8 @@
 #ifndef __BADGE_H_
 #define __BADGE_H_
 
-#include <string>
 #include <mutex>
+#include <string>
 
 #include <stdint.h>
 
@@ -10,30 +10,29 @@
 
 using json = nlohmann::json;
 
-
 class Badge
 {
 private:
-	json m_badge;
+    json m_badge;
 
-	std::string m_badgeFile;
+    std::string m_badgeFile;
 
-	std::string m_firstName;
-	std::string m_lastName;
+    std::string m_firstName;
+    std::string m_lastName;
 
-	uint64_t m_badgeNumber;
+    uint64_t m_badgeNumber;
 
-	int parse();
+    int parse();
 
 public:
-	Badge(const std::string &badgeFile);
-	~Badge();
+    Badge(const std::string &badgeFile);
+    ~Badge();
 
-	void takeAction(bool accessGranted);
+    void takeAction(bool accessGranted);
 
-	uint64_t getBadgeNumber();
+    uint64_t getBadgeNumber();
 
-	bool valid(uint64_t badgeToCheck);
+    bool valid(uint64_t badgeToCheck);
 };
 
 #endif

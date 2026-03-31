@@ -1,8 +1,8 @@
 #ifndef __IO_H_
 #define __IO_H_
 
-#include <string>
 #include <mutex>
+#include <string>
 
 #include <stdint.h>
 
@@ -11,44 +11,44 @@
 using json = nlohmann::json;
 
 enum ioLocationType {
-	IO_LOC_LOCAL = 0,
-	IO_LOC_IP
+    IO_LOC_LOCAL = 0,
+    IO_LOC_IP
 };
 
 enum ioDirection {
-	IO_DIR_IN = 0,
-	IO_DIR_AIN,
-	IO_DIR_OUT
+    IO_DIR_IN = 0,
+    IO_DIR_AIN,
+    IO_DIR_OUT
 };
 
 class IO
 {
 private:
-	std::string m_name;
-	std::string m_location;
-	std::string m_fullLocation;
+    std::string m_name;
+    std::string m_location;
+    std::string m_fullLocation;
 
-	enum ioLocationType m_locationType;
-	enum ioDirection m_direction;
+    enum ioLocationType m_locationType;
+    enum ioDirection m_direction;
 
-	bool m_exported;
+    bool m_exported;
 
-	int exportIo();
-	int getDigitalIo();
-	int getAnalogIo();
+    int exportIo();
+    int getDigitalIo();
+    int getAnalogIo();
 
 public:
-	IO();
-	~IO();
+    IO();
+    ~IO();
 
-	std::string getName() { return this->m_name; }
+    std::string getName() { return this->m_name; }
 
-	void fromJson(const json &jsonObject);
-	void clear();
-	void set();
-	void set(bool high);
+    void fromJson(const json &jsonObject);
+    void clear();
+    void set();
+    void set(bool high);
 
-	int get();
+    int get();
 };
 
 #endif

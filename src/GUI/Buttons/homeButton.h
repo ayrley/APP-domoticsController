@@ -5,9 +5,10 @@
 
 #include "domeButton.h"
 
-class HomeButton : public DomeButton {
+class HomeButton : public DomeButton
+{
 public:
-	explicit HomeButton(nanogui::Widget *parent, std::function<void()> callback);
+    explicit HomeButton(nanogui::Widget *parent, std::function<void()> callback);
 };
 
 #endif

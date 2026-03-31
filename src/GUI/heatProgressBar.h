@@ -3,10 +3,11 @@
 
 #include <nanogui/progressbar.h>
 
-class HeatProgressBar : public nanogui::ProgressBar {
+class HeatProgressBar : public nanogui::ProgressBar
+{
 public:
-	explicit HeatProgressBar(nanogui::Widget *parent);
-	void draw(NVGcontext *ctx) override;
+    explicit HeatProgressBar(nanogui::Widget *parent);
+    void draw(NVGcontext *ctx) override;
 };
 
 #endif

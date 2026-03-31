@@ -1,7 +1,7 @@
 #include "proximity.h"
 
-#include <iostream>
 #include <chrono>
+#include <iostream>
 #include <thread>
 
 Proximity::Proximity()
@@ -25,14 +25,14 @@ int Proximity::readRawValue()
 {
     m_sensorFile.clear();
     m_sensorFile.seekg(0);
-    
+
     int value;
     m_sensorFile >> value;
-    
+
     if (m_sensorFile.fail()) {
         throw std::runtime_error("Failed to read proximity sensor value");
     }
-    
+
     return value;
 }
 
@@ -48,8 +48,7 @@ void Proximity::setDetectionHandler(std::function<void(bool)> handler)
 
 void Proximity::run()
 {
-    while (m_running.load())
-    {
+    while (m_running.load()) {
         try {
             const bool detected = isObjectDetected();
             const bool stateChanged = !m_hasLastDetectionState || detected != m_lastDetectionState;
@@ -71,20 +70,20 @@ void Proximity::run()
 
 void Proximity::start()
 {
-	if (m_running.exchange(true)) {
-		return;
-	}
+    if (m_running.exchange(true)) {
+        return;
+    }
 
-	this->m_runner = std::thread(&Proximity::run, this);
+    this->m_runner = std::thread(&Proximity::run, this);
 }
 
 void Proximity::stop()
 {
-	if (!m_running.exchange(false)) {
-		return;
-	}
+    if (!m_running.exchange(false)) {
+        return;
+    }
 
-	if (m_runner.joinable()) {
-		m_runner.join();
-	}
+    if (m_runner.joinable()) {
+        m_runner.join();
+    }
 }

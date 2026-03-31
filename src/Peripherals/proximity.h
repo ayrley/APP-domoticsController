@@ -1,12 +1,12 @@
 #ifndef __PROXIMITY_H
 #define __PROXIMITY_H
 
+#include <atomic>
 #include <fstream>
 #include <functional>
-#include <string>
 #include <stdexcept>
+#include <string>
 #include <thread>
-#include <atomic>
 
 #define SENSOR_PATH "/sys/class/iio/device1/in_proximity_raw"
 
@@ -32,7 +32,6 @@ public:
     void setDetectionHandler(std::function<void(bool)> handler);
     void start();
     void stop();
-
 };
 
 #endif // __PROXIMITY_H

@@ -3,8 +3,7 @@
 
 #include "settings.h"
 
-//Domotics Operations and Monitoring Engine
-
+// Domotics Operations and Monitoring Engine
 
 #define DEBUG
 
@@ -14,14 +13,14 @@ int loadBadges();
 int startReaders();
 int loadIos();
 
-Settings * getSetting(enum settingsType settingType);
+Settings *getSetting(enum settingsType settingType);
 
 #ifdef DEBUG
-	#define DIR_ETC 		""
-	#define DIR_SHARED		""
+#define DIR_ETC ""
+#define DIR_SHARED ""
 #else
-	#define DIR_ETC			"/etc/"
-	#define DIR_SHARED		"/mnt/data/"
+#define DIR_ETC "/etc/"
+#define DIR_SHARED "/mnt/data/"
 #endif
 
 #endif

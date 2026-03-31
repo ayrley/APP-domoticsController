@@ -2,8 +2,8 @@
 #define __BACKLIGHT_H
 
 #include <fstream>
-#include <string>
 #include <stdexcept>
+#include <string>
 
 #define BACKLIGHT_PATH "/sys/class/backlight/backlight/brightness"
 

@@ -6,11 +6,12 @@
 
 #include "domeButton.h"
 
-class OrbitButton : public DomeButton {
+class OrbitButton : public DomeButton
+{
 public:
-	explicit OrbitButton(nanogui::Widget *parent,
-	                     const std::string &label,
-	                     std::function<void()> callback);
+    explicit OrbitButton(nanogui::Widget *parent,
+                         const std::string &label,
+                         std::function<void()> callback);
 };
 
 #endif

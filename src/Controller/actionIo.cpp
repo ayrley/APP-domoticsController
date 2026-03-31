@@ -1,14 +1,14 @@
 #include "actionIo.h"
 
 ActionIo::ActionIo() :
-        m_duration(0),
-        m_io(nullptr) 
+    m_duration(0),
+    m_io(nullptr)
 {
 }
 
-ActionIo::ActionIo(IO *io) : 
-        m_io(io),
-        m_duration(0)
+ActionIo::ActionIo(IO *io) :
+    m_io(io),
+    m_duration(0)
 {
 }
 

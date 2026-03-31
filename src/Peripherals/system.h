@@ -3,26 +3,26 @@
 
 #include <string>
 
-class System {
+class System
+{
 public:
+    struct CpuSample {
+        unsigned long long idle = 0;
+        unsigned long long total = 0;
+    };
 
-	struct CpuSample {
-		unsigned long long idle = 0;
-		unsigned long long total = 0;
-	};
+    static CpuSample readCpuSample();
 
-	static CpuSample readCpuSample();
-
-	static std::string formatCpuUsage(const CpuSample &previousSample, const CpuSample &currentSample);
-	static double cpuUsageFraction(const CpuSample &previousSample, const CpuSample &currentSample);
-	static std::string readRamUsage();
-	static double readRamUsageFraction();
-	static std::string readDiskUsage();
-	static double readDiskUsageFraction();
+    static std::string formatCpuUsage(const CpuSample &previousSample, const CpuSample &currentSample);
+    static double cpuUsageFraction(const CpuSample &previousSample, const CpuSample &currentSample);
+    static std::string readRamUsage();
+    static double readRamUsageFraction();
+    static std::string readDiskUsage();
+    static double readDiskUsageFraction();
 
 private:
-	static std::string formatPercent(double value);
-	static std::string formatGiB(unsigned long long bytes);
+    static std::string formatPercent(double value);
+    static std::string formatGiB(unsigned long long bytes);
 };
 
 #endif

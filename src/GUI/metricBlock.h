@@ -3,11 +3,12 @@
 
 #include <string>
 
-namespace nanogui {
+namespace nanogui
+{
 class Label;
 class ProgressBar;
 class Widget;
-}
+} // namespace nanogui
 
 nanogui::Label *createMetricBlock(nanogui::Widget *parent,
                                   const std::string &title,
