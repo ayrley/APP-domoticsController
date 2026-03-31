@@ -12,13 +12,15 @@ class Backlight
 private:
     std::ifstream m_backlightFile;
     int m_brightness{0};
+    bool m_isAvailable{false};
 
 public:
     Backlight();
     ~Backlight();
 
-    int getBrightness();
+    int getBrightness() const;
     void setBrightness(int value);
+    bool isAvailable() const { return m_isAvailable; }
 };
 
 #endif // __BACKLIGHT_H

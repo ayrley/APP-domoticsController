@@ -3,12 +3,23 @@
 #include <chrono>
 #include <iostream>
 #include <thread>
+#include <debug.h>
 
 Proximity::Proximity()
+    : m_lastDetectionState(true),
+      m_hasLastDetectionState(true)
 {
-    m_sensorFile.open(SENSOR_PATH);
-    if (!m_sensorFile.is_open()) {
-        throw std::runtime_error("Failed to open proximity sensor at " + std::string(SENSOR_PATH));
+    try {
+        m_sensorFile.open(SENSOR_PATH);
+        if (!m_sensorFile.is_open()) {
+            throw std::runtime_error("Proximity sensor device not found");
+        }
+        m_isAvailable = true;
+    } catch (const std::exception &e) {
+        ERR("Proximity sensor unavailable, using mock mode (always detected)");
+        m_isAvailable = false;
+        m_lastDetectionState = true;
+        m_hasLastDetectionState = true;
     }
 }
 
@@ -23,6 +34,10 @@ Proximity::~Proximity()
 
 int Proximity::readRawValue()
 {
+    if (!m_isAvailable) {
+        return 50;
+    }
+
     m_sensorFile.clear();
     m_sensorFile.seekg(0);
 
@@ -46,19 +61,47 @@ void Proximity::setDetectionHandler(std::function<void(bool)> handler)
     m_detectionHandler = std::move(handler);
 }
 
+void Proximity::resetAbsenceGrace()
+{
+    m_graceResetRequested = true;
+}
+
 void Proximity::run()
 {
+    using Clock = std::chrono::steady_clock;
+    constexpr auto kAbsenceGracePeriod = std::chrono::seconds(5);
+
+    bool absenceGracePending = false;
+    Clock::time_point absenceStart;
+
     while (m_running.load()) {
         try {
+            if (m_graceResetRequested.exchange(false) && absenceGracePending) {
+                absenceStart = Clock::now();
+            }
+
             const bool detected = isObjectDetected();
             const bool stateChanged = !m_hasLastDetectionState || detected != m_lastDetectionState;
             if (stateChanged) {
                 m_lastDetectionState = detected;
                 m_hasLastDetectionState = true;
-                std::cout << (detected ? "Object detected!" : "No object detected.") << std::endl;
+                LOG((detected ? "Object detected!" : "No object detected."));
             }
-            if (m_detectionHandler) {
-                m_detectionHandler(detected);
+
+            if (detected) {
+                absenceGracePending = false;
+                if (m_detectionHandler) {
+                    m_detectionHandler(true);
+                }
+            } else {
+                if (!absenceGracePending) {
+                    absenceGracePending = true;
+                    absenceStart = Clock::now();
+                } else if (Clock::now() - absenceStart >= kAbsenceGracePeriod) {
+                    if (m_detectionHandler) {
+                        m_detectionHandler(false);
+                    }
+                }
             }
         } catch (const std::exception &error) {
             std::cerr << "Proximity read failed: " << error.what() << std::endl;

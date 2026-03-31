@@ -16,9 +16,11 @@ private:
     std::ifstream m_sensorFile;
     std::thread m_runner;
     std::atomic<bool> m_running{false};
+    std::atomic<bool> m_graceResetRequested{false};
     std::function<void(bool)> m_detectionHandler;
     bool m_lastDetectionState{false};
     bool m_hasLastDetectionState{false};
+    bool m_isAvailable{false};
 
     void run();
 
@@ -29,7 +31,9 @@ public:
     int readRawValue();
 
     bool isObjectDetected(int threshold = 100);
+    bool isAvailable() const { return m_isAvailable; }
     void setDetectionHandler(std::function<void(bool)> handler);
+    void resetAbsenceGrace();
     void start();
     void stop();
 };
