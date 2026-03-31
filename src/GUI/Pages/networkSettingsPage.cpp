@@ -8,7 +8,7 @@
 
 #include "../../Peripherals/network.h"
 
-extern std::vector<Settings *> *g_settings;
+extern Settings *g_userSettings;
 
 NetworkSettingsPage::NetworkSettingsPage(nanogui::Widget *parent,
                                          std::function<void()> onBack) :
@@ -33,7 +33,7 @@ NetworkSettingsPage::NetworkSettingsPage(nanogui::Widget *parent,
     dhcpLabel->set_font_size(16);
     dhcpLabel->set_color(nanogui::Color(150, 180, 200, 255));
 
-    m_dhcpEnabled = g_settings->at(0)->getNetwork()->getDhcp();
+    m_dhcpEnabled = g_userSettings->getNetwork()->getDhcp();
     m_dhcpToggleButton = new ToggleButton(
         dhcpRow,
         "ON  [====]",
@@ -68,11 +68,11 @@ NetworkSettingsPage::NetworkSettingsPage(nanogui::Widget *parent,
         *out = textBox;
     };
 
-    makeField("IP Address", g_settings->at(0)->getNetwork()->getIpAddress(), &m_ipAddressBox);
-    makeField("Netmask", g_settings->at(0)->getNetwork()->getNetmask(), &m_netmaskBox);
-    makeField("Gateway", g_settings->at(0)->getNetwork()->getGateway(), &m_gatewayBox);
-    makeField("DNS 1", g_settings->at(0)->getNetwork()->getDns1(), &m_dns1Box);
-    makeField("DNS 2", g_settings->at(0)->getNetwork()->getDns2(), &m_dns2Box);
+    makeField("IP Address", g_userSettings->getNetwork()->getIpAddress(), &m_ipAddressBox);
+    makeField("Netmask", g_userSettings->getNetwork()->getNetmask(), &m_netmaskBox);
+    makeField("Gateway", g_userSettings->getNetwork()->getGateway(), &m_gatewayBox);
+    makeField("DNS 1", g_userSettings->getNetwork()->getDns1(), &m_dns1Box);
+    makeField("DNS 2", g_userSettings->getNetwork()->getDns2(), &m_dns2Box);
 
     auto *buttonRow = new nanogui::Widget(this);
     buttonRow->set_layout(new nanogui::BoxLayout(
@@ -80,12 +80,12 @@ NetworkSettingsPage::NetworkSettingsPage(nanogui::Widget *parent,
     buttonRow->set_fixed_height(44);
 
     auto *saveButton = new DomeButton(buttonRow, "Save", [this]() {
-        g_settings->at(0)->getNetwork()->setIpAddress(m_ipAddressBox->value());
-        g_settings->at(0)->getNetwork()->setNetmask(m_netmaskBox->value());
-        g_settings->at(0)->getNetwork()->setGateway(m_gatewayBox->value());
-        g_settings->at(0)->getNetwork()->setDns(m_dns1Box->value(), m_dns2Box->value());
-        g_settings->at(0)->getNetwork()->save();
-        g_settings->at(0)->write();
+        g_userSettings->getNetwork()->setIpAddress(m_ipAddressBox->value());
+        g_userSettings->getNetwork()->setNetmask(m_netmaskBox->value());
+        g_userSettings->getNetwork()->setGateway(m_gatewayBox->value());
+        g_userSettings->getNetwork()->setDns(m_dns1Box->value(), m_dns2Box->value());
+        g_userSettings->getNetwork()->save();
+        g_userSettings->write();
         if (m_onBack) {
             m_onBack();
         }
@@ -112,7 +112,7 @@ void NetworkSettingsPage::updateStaticFieldsVisibility()
 void NetworkSettingsPage::applyDhcpState(bool enabled)
 {
     m_dhcpEnabled = enabled;
-    g_settings->at(0)->getNetwork()->setDhcp(enabled);
+    g_userSettings->getNetwork()->setDhcp(enabled);
 
     if (m_dhcpToggleButton) {
         if (m_dhcpToggleButton->state() != enabled) {
