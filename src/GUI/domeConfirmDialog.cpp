@@ -3,6 +3,7 @@
 #include "domeButton.h"
 
 #include <nanogui/nanogui.h>
+#include <nanogui/opengl.h>
 #include <nanogui/screen.h>
 #include <nanogui/theme.h>
 #include <nanovg.h>
