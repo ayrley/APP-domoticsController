@@ -42,9 +42,9 @@ LDFLAGS += -Wl,-rpath,$(NANOGUI_ROOT)
 BUILD ?= release
 
 ifeq ($(BUILD),debug)
-CXXFLAGS += -DDEBUG
+CXXFLAGS += -DDEBUG -O0 -g
 else
-CXXFLAGS +=
+CXXFLAGS += -O2
 endif
 
 .PHONY: all clean $(NAME)-linter debug release
