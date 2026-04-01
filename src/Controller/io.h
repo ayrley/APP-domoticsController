@@ -42,6 +42,8 @@ public:
     ~IO();
 
     std::string getName() { return this->m_name; }
+    std::string getLocation() { return this->m_location; }
+    enum ioDirection getDirection() { return this->m_direction; }
 
     void fromJson(const json &jsonObject);
     void clear();
