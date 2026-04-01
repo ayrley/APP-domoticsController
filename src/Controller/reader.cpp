@@ -153,12 +153,7 @@ void Reader::setWiegandLed(enum ledColor color)
     write(fptr, buffer, strlen(buffer));
     close(fptr);
 
-    this->m_ledPassedTime = 0;
-
-    while (this->m_ledPassedTime < this->m_ledDuration) {
-        usleep(50 * 1000);
-        this->m_ledPassedTime += 50;
-    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(this->m_ledDuration));
 
     fptr = open(ledPath.c_str(), O_WRONLY);
     if (!fptr)
@@ -179,6 +174,7 @@ void Reader::handleWiegandReader()
     std::thread ledRunner;
 
     while (true) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         if (this->getWiegandBadge(&badge))
             continue;
 
