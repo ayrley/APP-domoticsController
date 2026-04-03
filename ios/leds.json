@@ -1,0 +1,29 @@
+{
+    "Status": [
+        {
+            "name": "led_1",
+            "location": "/sys/class/gpio516"
+        },
+          {
+            "type": "LOCAL",
+            "name": "led_2",
+            "location": "/sys/class/gpio515"
+        },
+         {
+            "type": "LOCAL",
+            "name": "led_3",
+            "location": "/sys/class/gpio514"
+        },
+          {
+            "type": "LOCAL",
+            "name": "led_4",
+            "location": "/sys/class/gpio513"
+        }
+    ],
+    "life": [
+        {
+            "name": "Life",
+            "location": "/sys/class/gpio130"
+        }
+    ]
+}

@@ -1,0 +1,7 @@
+{
+    "tamperswitch": {
+        "location": "/sys/class/gpio129",
+        "activeHigh": true,
+        "pollIntervalMs": 100
+    }
+}

@@ -1,29 +1,31 @@
 {
   "IOs": [
     {
-      "type": "LOCAL",
+      "type": "IP",
       "direction": "AIN",
       "name": "in_bel",
-      "flank" : "UP",
+      "flank": "UP",
       "location": "adc0"
+    },
+    {
+      "type": "LOCAL",
+      "direction": "IN",
+      "name": "in_1",
+      "flank": "UP",
+      "location": "/sys/class/gpio512"
+    },
+    {
+      "type": "LOCAL",
+      "direction": "IN",
+      "name": "in_2",
+      "flank": "UP",
+      "location": "/sys/class/gpio513"
     },
     {
       "type": "LOCAL",
       "direction": "OUT",
       "name": "out_bel",
-   	  "location": "/sys/class/gpio5"
-    },
-    {
-      "type": "LOCAL",
-      "direction": "OUT",
-      "name": "out_red",
-   	  "location": "/sys/class/gpio5"
-    },
-    {
-      "type": "LOCAL",
-      "direction": "OUT",
-      "name": "out_green",
-   	  "location": "/sys/class/gpio5"
+      "location": "/sys/class/gpio520"
     }
   ]
 }
