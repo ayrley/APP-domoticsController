@@ -188,8 +188,8 @@ ManualControlPage::ManualControlPage(nanogui::Widget *parent, std::function<void
     auto *forceLowButton = new DomeButton(forceRow, "Force LOW", [this]() { forceIO(false); });
     forceLowButton->set_fixed_size(nanogui::Vector2i(150, 40));
 
-    m_forceButton = new DomeButton(forceRow, "Release", [this]() { releaseForcedIO(); });
-    m_forceButton->set_fixed_size(nanogui::Vector2i(150, 40));
+    m_releaseButton = new DomeButton(forceRow, "Release", [this]() { releaseForcedIO(); });
+    m_releaseButton->set_fixed_size(nanogui::Vector2i(150, 40));
 
     buildIOList();
 }

@@ -43,7 +43,7 @@ private:
     nanogui::Widget *m_stateIndicator{nullptr};
     DomeButton *m_setButton{nullptr};
     DomeButton *m_clearButton{nullptr};
-    DomeButton *m_forceButton{nullptr};
+    DomeButton *m_releaseButton{nullptr};
 
     std::vector<IO *> m_outputIOs;
     std::vector<DomeButton *> m_ioButtons;
