@@ -2,11 +2,14 @@ NAME := control
 VERSION := 0.1
 DISTNAME := $(NAME)-$(VERSION)
 
-NANOGUI_ROOT := /home/ayrley/priv/nanogui
+ifdef CROSS_COMPILE
+CXX := $(CROSS_COMPILE)g++
+endif
 
 BUILD_DIR := build-make
 OBJ_DIR := $(BUILD_DIR)/obj
 TARGET := $(BUILD_DIR)/$(NAME)
+COMPILER_STAMP := $(BUILD_DIR)/.compiler
  
 SRCS	:= 	$(wildcard src/*.cpp) \
 			$(wildcard src/Controller/*.cpp) \
@@ -18,7 +21,7 @@ SRCS	:= 	$(wildcard src/*.cpp) \
 OBJS	:= $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(SRCS))
 DEPS	:= $(OBJS:.o=.d)
 		
-CXXFLAGS += -DNANOGUI_USE_OPENGL -DNANOGUI_SHARED -DNVG_SHARED
+CXXFLAGS += -DNANOGUI_SHARED -DNVG_SHARED -DNANOGUI_USE_OPENGL
 
 INCS 	:= 	-I. \
 		-Isrc \
@@ -27,17 +30,17 @@ INCS 	:= 	-I. \
 		-Isrc/GUI \
 		-Isrc/GUI/Buttons \
 		-Isrc/GUI/Pages \
-		-I$(NANOGUI_ROOT)/include \
-		-I$(NANOGUI_ROOT)/include/nanovg \
-		-I$(NANOGUI_ROOT)/ext/nanovg/src
+		-I$(HOST_DIR)/include \
+		-I$(HOST_DIR)/include/nanovg \
+		-I$(HOST_DIR)/include/nanogui/ext/nanovg/src
 	 	
 LIBS	:= -lnanogui
 
 LIBDIR	:= 	-L$(HOST_DIR)/usr/lib \
 		-L$(TARGET_DIR)/usr/lib \
-		-L$(NANOGUI_ROOT)
+		-L$(HOST_DIR)
 
-LDFLAGS += -Wl,-rpath,$(NANOGUI_ROOT)
+LDFLAGS += -Wl,-rpath,$(HOST_DIR)
 
 BUILD ?= release
 
@@ -49,7 +52,7 @@ ifeq ($(BUILD),release)
 CXXFLAGS += -O2
 endif
 
-.PHONY: all clean $(NAME)-linter debug release
+.PHONY: all clean $(NAME)-linter debug release prepare-build
 
 all: $(TARGET)
 
@@ -62,8 +65,15 @@ release:
 $(NAME): $(TARGET)
 	@echo "Built $(TARGET)"
 
-$(TARGET): $(OBJS) | $(BUILD_DIR)
-	$(CXX) -o $@ $(OBJS) $(LDFLAGS) $(LIBDIR) $(LIBS)
+
+prepare-build: $(COMPILER_STAMP)
+
+$(COMPILER_STAMP): | $(BUILD_DIR)
+	@if [ -f $@ ] && [ "`cat $@`" != "$(CXX)" ]; then rm -rf $(OBJ_DIR) $(TARGET); fi
+	@printf '%s\n' '$(CXX)' > $@
+
+$(TARGET): prepare-build $(OBJS) | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $(OBJS) $(LDFLAGS) $(LIBDIR) $(LIBS)
 	ln -sf $(TARGET) $(NAME)
 
 $(OBJ_DIR)/%.o: %.cpp
