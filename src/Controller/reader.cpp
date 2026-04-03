@@ -14,6 +14,7 @@
 #include "badge.h"
 #include "badgeProtocol.h"
 #include "debug.h"
+#include "eventLog.h"
 #include "reader.h"
 #include "tcpServer.h"
 
@@ -215,6 +216,8 @@ void Reader::handleWiegandReader()
         else
             this->m_deniedAction->execute();
 
+        EventLog::addBadgeRead(this->m_readerName, badge, validBadge);
+
         ledRunner = std::thread(&Reader::setWiegandLed, this, color);
         ledRunner.detach();
     }
@@ -261,6 +264,8 @@ void Reader::handleNetworkReader()
         if (actionToExecute) {
             actionToExecute->execute();
         }
+
+        EventLog::addBadgeRead(this->m_readerName, badge, validBadge);
 
         json actionOutputs = json::array();
         if (actionToExecute) {

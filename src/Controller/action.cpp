@@ -7,6 +7,7 @@
 #include "action.h"
 #include "actionIo.h"
 #include "debug.h"
+#include "eventLog.h"
 #include "io.h"
 
 extern std::vector<IO *> *g_ios;
@@ -91,11 +92,22 @@ void Action::fromJson(const json &jsonObject)
 void Action::executeSingle(ActionIo io)
 {
     IO *ioPtr = io.getIo();
+    if (!ioPtr) {
+        return;
+    }
+
+    std::string outputName = ioPtr->getName();
+    if (outputName.empty()) {
+        outputName = ioPtr->getLocation();
+    }
+
     ioPtr->set();
+    EventLog::addOutputToggle(outputName, true, "action:" + this->m_name);
 
     if (io.getDuration() > 0) {
         std::this_thread::sleep_for(std::chrono::milliseconds(io.getDuration()));
         ioPtr->clear();
+        EventLog::addOutputToggle(outputName, false, "action:" + this->m_name);
     }
 }
 

@@ -5,6 +5,7 @@
 #include "GUI/Buttons/orbitButton.h"
 #include "GUI/domeCore.h"
 #include "GUI/Pages/badgePage.h"
+#include "GUI/Pages/loggingPage.h"
 #include "GUI/Pages/manualControlPage.h"
 #include "GUI/Pages/overviewPage.h"
 #include "GUI/Pages/screensaverPage.h"
@@ -25,12 +26,14 @@ constexpr int PAGE_BADGES = 1;
 constexpr int PAGE_OVERVIEW = 2;
 constexpr int PAGE_SETTINGS = 3;
 constexpr int PAGE_MANUAL = 4;
-constexpr int PAGE_SCREENSAVER = 5;
+constexpr int PAGE_LOGGING = 5;
+constexpr int PAGE_SCREENSAVER = 6;
 constexpr float PI = 3.14159265359f;
-constexpr float ORBIT_BASE_OVERVIEW = -PI * 0.75f;
-constexpr float ORBIT_BASE_BADGES = -PI * 0.25f;
-constexpr float ORBIT_BASE_MANUAL = PI * 0.25f;
-constexpr float ORBIT_BASE_SETTINGS = PI * 0.75f;
+constexpr float ORBIT_BASE_OVERVIEW = -PI * 0.5f;
+constexpr float ORBIT_BASE_BADGES = -PI * 0.1f;
+constexpr float ORBIT_BASE_MANUAL = PI * 0.3f;
+constexpr float ORBIT_BASE_SETTINGS = PI * 0.7f;
+constexpr float ORBIT_BASE_LOGGING = PI * 1.1f;
 
 class TamperBorderOverlay : public nanogui::Widget {
 public:
@@ -101,11 +104,13 @@ Screen::Screen(int width,
     m_settingsPage = nullptr;
     m_manualControlPage = nullptr;
     m_badgePage = nullptr;
+    m_loggingPage = nullptr;
     m_screensaverPage = nullptr;
     m_overviewOrbitButton = nullptr;
     m_badgesOrbitButton = nullptr;
     m_settingsOrbitButton = nullptr;
     m_manualOrbitButton = nullptr;
+    m_loggingOrbitButton = nullptr;
     m_landingCenterX = width / 2;
     m_landingCenterY = height / 2;
     m_landingOrbitRadius = 200.0f;
@@ -114,6 +119,7 @@ Screen::Screen(int width,
     buildOverviewPage();
     buildSettingsPage();
     buildManualControlPage();
+    buildLoggingPage();
     buildScreensaverPage();
 
     m_badgePage = new BadgePage(
@@ -164,6 +170,7 @@ void Screen::buildLandingPage() {
     m_badgesOrbitButton = new OrbitButton(m_landingPanel, "Badges", [this]() { switchPage(PAGE_BADGES); });
     m_settingsOrbitButton = new OrbitButton(m_landingPanel, "Settings", [this]() { switchPage(PAGE_SETTINGS); });
     m_manualOrbitButton = new OrbitButton(m_landingPanel, "Manual", [this]() { switchPage(PAGE_MANUAL); });
+    m_loggingOrbitButton = new OrbitButton(m_landingPanel, "Logs", [this]() { switchPage(PAGE_LOGGING); });
 
     // Keep orbit spacing balanced around the core while respecting small-screen margins.
     const float coreRadius = 120.0f;
@@ -184,7 +191,8 @@ void Screen::buildLandingPage() {
 }
 
 void Screen::updateLandingOrbit(float phase) {
-    if (!m_overviewOrbitButton || !m_badgesOrbitButton || !m_settingsOrbitButton || !m_manualOrbitButton) {
+    if (!m_overviewOrbitButton || !m_badgesOrbitButton || !m_settingsOrbitButton ||
+        !m_manualOrbitButton || !m_loggingOrbitButton) {
         return;
     }
 
@@ -200,6 +208,7 @@ void Screen::updateLandingOrbit(float phase) {
     placeButton(m_badgesOrbitButton, ORBIT_BASE_BADGES + phase);
     placeButton(m_manualOrbitButton, ORBIT_BASE_MANUAL + phase);
     placeButton(m_settingsOrbitButton, ORBIT_BASE_SETTINGS + phase);
+    placeButton(m_loggingOrbitButton, ORBIT_BASE_LOGGING + phase);
 }
 
 void Screen::buildOverviewPage() {
@@ -235,6 +244,19 @@ void Screen::buildManualControlPage() {
     m_manualControlPage->set_position(nanogui::Vector2i(0, 0));
     m_manualControlPage->set_fixed_size(screenSize);
     m_manualControlPage->setActivityCallback([this]() {
+        if (m_onScreensaverWakeRequest) m_onScreensaverWakeRequest();
+    });
+}
+
+void Screen::buildLoggingPage() {
+    const nanogui::Vector2i screenSize = m_screen->size();
+    m_loggingPage = new LoggingPage(
+        m_screen,
+        [this]() { switchPage(PAGE_LANDING); });
+    m_loggingPage->set_position(nanogui::Vector2i(0, 0));
+    m_loggingPage->set_fixed_size(screenSize);
+    m_loggingPage->set_visible(false);
+    m_loggingPage->setActivityCallback([this]() {
         if (m_onScreensaverWakeRequest) m_onScreensaverWakeRequest();
     });
 }
@@ -343,6 +365,9 @@ void Screen::switchPage(int page) {
     m_overviewPage->set_visible(page == PAGE_OVERVIEW);
     m_settingsPage->set_visible(page == PAGE_SETTINGS);
     m_manualControlPage->set_visible(page == PAGE_MANUAL);
+    if (m_loggingPage) {
+        m_loggingPage->set_visible(page == PAGE_LOGGING);
+    }
     if (m_screensaverPage) {
         m_screensaverPage->set_visible(page == PAGE_SCREENSAVER);
     }

@@ -18,6 +18,7 @@
 #include "badge.h"
 #include "control.h"
 #include "debug.h"
+#include "eventLog.h"
 #include "io.h"
 #include "lifeLed.h"
 #include "proximity.h"
@@ -275,6 +276,8 @@ int runGui(Proximity &proximitySensor, StatusLeds &statusLeds, TamperSwitch &tam
             nanogui::async([&screen, detected]() {
                 screen.setTamperDetected(detected);
             });
+
+            EventLog::addTamper(detected);
 
             if (detected) {
                 statusLeds.showError(StatusLeds::ERROR_SYSTEM);

@@ -1,6 +1,7 @@
 #include "manualControlPage.h"
 
 #include "domeButton.h"
+#include "eventLog.h"
 #include "frostPanel.h"
 
 #include <algorithm>
@@ -329,6 +330,11 @@ void ManualControlPage::triggerIO(bool state)
     }
 
     m_selectedIO->set(state);
+    std::string outputName = m_selectedIO->getName();
+    if (outputName.empty()) {
+        outputName = m_selectedIO->getLocation();
+    }
+    EventLog::addOutputToggle(outputName, state, "local_override");
     
     // Update visual indicator
     if (state) {
@@ -356,6 +362,11 @@ void ManualControlPage::triggerIO(bool state)
             std::this_thread::sleep_for(std::chrono::milliseconds(duration));
             if (m_selectedIO) {
                 m_selectedIO->clear();
+                std::string outputName = m_selectedIO->getName();
+                if (outputName.empty()) {
+                    outputName = m_selectedIO->getLocation();
+                }
+                EventLog::addOutputToggle(outputName, false, "local_override");
                 // Update indicator to LOW
                 if (m_nanoScreen) {
                     nanogui::async([this]() {
@@ -399,6 +410,12 @@ void ManualControlPage::forceIO(bool state)
     }
 
     m_selectedIO->set(state);
+    std::string outputName = m_selectedIO->getName();
+    if (outputName.empty()) {
+        outputName = m_selectedIO->getLocation();
+    }
+    EventLog::addOutputToggle(outputName, state, "local_override");
+
     m_forcedIO = m_selectedIO;
     m_forcedState = state;
     
@@ -431,6 +448,11 @@ void ManualControlPage::releaseForcedIO()
     }
 
     m_forcedIO->clear();
+    std::string outputName = m_forcedIO->getName();
+    if (outputName.empty()) {
+        outputName = m_forcedIO->getLocation();
+    }
+    EventLog::addOutputToggle(outputName, false, "local_override");
     m_forcedIO = nullptr;
     m_forcedState = false;
     

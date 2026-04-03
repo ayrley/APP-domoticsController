@@ -14,6 +14,7 @@ class Widget;
 
 class DomeBackground;
 class BadgePage;
+class LoggingPage;
 class OverviewPage;
 class SettingsPage;
 class ManualControlPage;
@@ -31,11 +32,13 @@ private:
     SettingsPage *m_settingsPage;
     ManualControlPage *m_manualControlPage;
     BadgePage *m_badgePage;
+    LoggingPage *m_loggingPage;
     ScreensaverPage *m_screensaverPage;
     OrbitButton *m_overviewOrbitButton;
     OrbitButton *m_badgesOrbitButton;
     OrbitButton *m_settingsOrbitButton;
     OrbitButton *m_manualOrbitButton;
+    OrbitButton *m_loggingOrbitButton;
     int m_landingCenterX;
     int m_landingCenterY;
     float m_landingOrbitRadius;
@@ -56,6 +59,7 @@ private:
     void buildOverviewPage();
     void buildSettingsPage();
     void buildManualControlPage();
+    void buildLoggingPage();
     void buildScreensaverPage();
     void updateLandingOrbit(float phase);
 
