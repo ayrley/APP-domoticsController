@@ -43,7 +43,9 @@ BUILD ?= release
 
 ifeq ($(BUILD),debug)
 CXXFLAGS += -DDEBUG -O0 -g
-else
+endif
+
+ifeq ($(BUILD),release)
 CXXFLAGS += -O2
 endif
 
