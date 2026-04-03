@@ -1,12 +1,13 @@
 #ifndef __CONTROL_H_
 #define __CONTROL_H_
 
+#include "statusLeds.h"
 #include "settings.h"
 
 int main(void);
 int loadSettings();
 int loadBadges();
-int startReaders();
+int startReaders(StatusLeds &statusLeds);
 int loadIos();
 
 Settings *getSetting(enum settingsType settingType);

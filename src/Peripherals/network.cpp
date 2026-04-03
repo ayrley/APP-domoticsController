@@ -1,6 +1,7 @@
 #include <cerrno>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 
 #include <stdint.h>
@@ -43,6 +44,10 @@ void Network::save()
 {
     std::ofstream interfacesFp(PATH(NET_INTERFACES));
 
+    if (!interfacesFp.is_open()) {
+        throw std::runtime_error("Unable to open network interfaces file for writing");
+    }
+
     interfacesFp << ETH_LOOPBACK << std::endl;
 
     if (this->m_dhcp) {
@@ -75,6 +80,10 @@ void Network::save()
     }
 
     interfacesFp.close();
+
+    if (interfacesFp.fail()) {
+        throw std::runtime_error("Failed to write network interfaces configuration");
+    }
 }
 
 bool Network::getDhcp()

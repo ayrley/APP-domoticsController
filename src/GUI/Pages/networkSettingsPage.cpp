@@ -1,14 +1,17 @@
 #include "networkSettingsPage.h"
 
+#include "debug.h"
 #include "domeButton.h"
 #include "toggleButton.h"
 
 #include <nanogui/nanogui.h>
 #include <nanogui/screen.h>
 
+#include "../../Peripherals/statusLeds.h"
 #include "../../Peripherals/network.h"
 
 extern Settings *g_userSettings;
+extern StatusLeds *g_statusLeds;
 
 NetworkSettingsPage::NetworkSettingsPage(nanogui::Widget *parent,
                                          std::function<void()> onBack) :
@@ -84,8 +87,31 @@ NetworkSettingsPage::NetworkSettingsPage(nanogui::Widget *parent,
         g_userSettings->getNetwork()->setNetmask(m_netmaskBox->value());
         g_userSettings->getNetwork()->setGateway(m_gatewayBox->value());
         g_userSettings->getNetwork()->setDns(m_dns1Box->value(), m_dns2Box->value());
-        g_userSettings->getNetwork()->save();
-        g_userSettings->write();
+
+        try {
+            g_userSettings->getNetwork()->save();
+        } catch (const std::exception &e) {
+            ERR("Network save failed: " << e.what());
+            if (g_statusLeds != nullptr) {
+                g_statusLeds->showError(StatusLeds::ERROR_NETWORK);
+            }
+            return;
+        }
+
+        try {
+            g_userSettings->write();
+        } catch (const std::exception &e) {
+            ERR("Settings save failed: " << e.what());
+            if (g_statusLeds != nullptr) {
+                g_statusLeds->showError(StatusLeds::ERROR_CONFIG);
+            }
+            return;
+        }
+
+        if (g_statusLeds != nullptr) {
+            g_statusLeds->clearError();
+        }
+
         if (m_onBack) {
             m_onBack();
         }

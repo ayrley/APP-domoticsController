@@ -1,6 +1,7 @@
 #ifndef __READER_H_
 #define __READER_H_
 
+#include <functional>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -53,12 +54,14 @@ private:
     readerType m_readerType;
 
     std::thread m_runner;
+    std::function<void(readerLocationType, const std::string &)> m_errorHandler;
 
     void handle();
     void handleLocalReader();
     void handleWiegandReader();
     void handleOsdpReader();
     void handleNetworkReader();
+    void reportError(const std::string &message);
     void setWiegandLed(enum ledColor color);
 
     int getWiegandBadge(uint64_t *badge);
@@ -72,16 +75,15 @@ public:
 
     void start();
     void setBadges(std::vector<Badge *> *badges);
+    void setErrorHandler(const std::function<void(readerLocationType, const std::string &)> &handler);
     void fromJson(const json &jsonObject);
 
     json getJson();
 
-    std::string getName();
-    std::string getLocation();
-
-    readerLocationType getLocationType();
-
-    readerType getType();
+    std::string getName() { return this->m_readerName; }
+    std::string getLocation() { return this->m_readerLocation; }
+    readerLocationType getLocationType() { return this->m_readerLocationType; }
+    readerType getType() { return this->m_readerType; }
 };
 
 #endif

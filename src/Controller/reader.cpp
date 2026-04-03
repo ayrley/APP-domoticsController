@@ -20,13 +20,21 @@
 Reader::Reader()
 {
     this->m_badges = nullptr;
+    this->m_grantedAction = nullptr;
+    this->m_deniedAction = nullptr;
     this->m_ledDuration = 3000;
+    this->m_keypadBytes = 0;
+    memset(this->m_keypad, 0, sizeof(this->m_keypad));
 }
 
 Reader::Reader(std::vector<Badge *> *badges)
 {
     this->m_badges = badges;
+    this->m_grantedAction = nullptr;
+    this->m_deniedAction = nullptr;
     this->m_ledDuration = 3000;
+    this->m_keypadBytes = 0;
+    memset(this->m_keypad, 0, sizeof(this->m_keypad));
 }
 
 Reader::~Reader()
@@ -36,6 +44,18 @@ Reader::~Reader()
 void Reader::setBadges(std::vector<Badge *> *badges)
 {
     this->m_badges = badges;
+}
+
+void Reader::setErrorHandler(const std::function<void(readerLocationType, const std::string &)> &handler)
+{
+    this->m_errorHandler = handler;
+}
+
+void Reader::reportError(const std::string &message)
+{
+    if (this->m_errorHandler) {
+        this->m_errorHandler(this->m_readerLocationType, message);
+    }
 }
 
 void Reader::start()
@@ -210,7 +230,7 @@ void Reader::handleNetworkReader()
     BadgeProtocol protocol;
     LOG("Network reader '" << this->m_readerName << "' is starting on " << this->m_readerLocation);
 
-    server.listenAndServe(this->m_readerLocation, [this, &protocol](const std::string &payload) {
+    bool started = server.listenAndServe(this->m_readerLocation, [this, &protocol](const std::string &payload) {
         uint64_t badge = 0;
         bool validPayload = protocol.parseBadgeFromPayload(payload, badge);
 
@@ -254,6 +274,10 @@ void Reader::handleNetworkReader()
                                    actionOutputs,
                                    validPayload);
     });
+
+    if (!started) {
+        reportError("Network reader '" + this->m_readerName + "' failed to start on " + this->m_readerLocation);
+    }
 }
 
 void Reader::handleLocalReader()
@@ -266,10 +290,14 @@ void Reader::handleLocalReader()
 
 void Reader::handle()
 {
-    if (this->m_readerLocationType == RDR_LOC_LOCAL)
-        this->handleLocalReader();
-    else if (this->m_readerLocationType == RDR_LOC_IP)
-        this->handleNetworkReader();
+    try {
+        if (this->m_readerLocationType == RDR_LOC_LOCAL)
+            this->handleLocalReader();
+        else if (this->m_readerLocationType == RDR_LOC_IP)
+            this->handleNetworkReader();
+    } catch (const std::exception &e) {
+        reportError(e.what());
+    }
 }
 
 json Reader::getJson()

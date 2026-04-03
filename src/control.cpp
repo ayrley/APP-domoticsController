@@ -23,6 +23,7 @@
 #include "reader.h"
 #include "screen.h"
 #include "settings.h"
+#include "statusLeds.h"
 
 namespace
 {
@@ -31,9 +32,28 @@ constexpr int SCREENSAVER_BACKLIGHT_BRIGHTNESS = 12;
 
 Settings *g_userSettings = nullptr;
 Settings *g_factorySettings = nullptr;
+StatusLeds *g_statusLeds = nullptr;
 std::vector<Badge *> *g_badges = new std::vector<Badge *>();
 std::vector<IO *> *g_ios = new std::vector<IO *>();
 std::vector<Action *> *g_actions = new std::vector<Action *>();
+
+namespace
+{
+bool hasNetworkReadersConfigured()
+{
+    if (g_userSettings == nullptr || g_userSettings->getReaders() == nullptr) {
+        return false;
+    }
+
+    for (Reader *reader : *g_userSettings->getReaders()) {
+        if (reader != nullptr && reader->getLocationType() == RDR_LOC_IP) {
+            return true;
+        }
+    }
+
+    return false;
+}
+}
 
 void clearBadgesCache()
 {
@@ -147,12 +167,18 @@ int loadIos()
     return ret;
 }
 
-int startReaders()
+int startReaders(StatusLeds &statusLeds)
 {
     int ret = 0;
 
     for (auto singleReader : *g_userSettings->getReaders()) {
         singleReader->setBadges(g_badges);
+        singleReader->setErrorHandler([&statusLeds](readerLocationType locationType, const std::string &message) {
+            ERR("Reader failure: " << message);
+            statusLeds.showError(locationType == RDR_LOC_IP
+                                     ? StatusLeds::ERROR_NETWORK
+                                     : StatusLeds::ERROR_READER);
+        });
         singleReader->start();
     }
 
@@ -208,7 +234,7 @@ bool enableNullPlatformIfSupported()
     return true;
 }
 
-int runGui(Proximity &proximitySensor)
+int runGui(Proximity &proximitySensor, StatusLeds &statusLeds)
 {
     int ret = 0;
     bool useFramebufferGui = shouldUseFramebufferGui();
@@ -235,6 +261,7 @@ int runGui(Proximity &proximitySensor)
         }
 
         nanogui::init();
+        statusLeds.setState(StatusLeds::STATE_READY);
         Screen screen(1024, 600, DIR_SHARED "badges", []() {
 			reloadBadgesCache();
 			LOG("Badges cache reloaded"); }, [&backlight, &proximitySensor, wakeBrightness]() {
@@ -259,6 +286,7 @@ int runGui(Proximity &proximitySensor)
         nanogui::shutdown();
     } catch (const std::exception &e) {
         ERR("GUI startup failed: " << e.what());
+        statusLeds.showError(StatusLeds::ERROR_SYSTEM);
         proximitySensor.stop();
         ret = 1;
     }
@@ -270,21 +298,64 @@ int main(void)
 {
 
     Proximity proximitySensor;
+    StatusLeds statusLeds;
+    g_statusLeds = &statusLeds;
 
-    loadIos();
-    LOG("IOs loaded");
+    statusLeds.setState(StatusLeds::STATE_BOOTING);
 
-    loadBadges();
-    LOG("Badges loaded");
+    try {
+        loadIos();
+        LOG("IOs loaded");
+    } catch (const std::exception &e) {
+        ERR("IO startup failed: " << e.what());
+        statusLeds.showError(StatusLeds::ERROR_IO);
+        return 1;
+    }
 
-    loadSettings();
-    LOG("Settings loaded");
+    try {
+        loadBadges();
+        LOG("Badges loaded");
+    } catch (const std::exception &e) {
+        ERR("Badge startup failed: " << e.what());
+        statusLeds.showError(StatusLeds::ERROR_SYSTEM);
+        return 1;
+    }
 
-    startReaders();
-    LOG("Readers started");
+    try {
+        loadSettings();
+        LOG("Settings loaded");
+    } catch (const std::exception &e) {
+        ERR("Settings startup failed: " << e.what());
+        statusLeds.showError(StatusLeds::ERROR_CONFIG);
+        return 1;
+    }
 
-    startActions();
-    LOG("Actions started");
+    try {
+        startReaders(statusLeds);
+        LOG("Readers started");
+    } catch (const std::exception &e) {
+        ERR("Reader startup failed: " << e.what());
+        statusLeds.showError(hasNetworkReadersConfigured()
+                                 ? StatusLeds::ERROR_NETWORK
+                                 : StatusLeds::ERROR_READER);
+        return 1;
+    }
 
-    return runGui(proximitySensor);
+    try {
+        startActions();
+        LOG("Actions started");
+    } catch (const std::exception &e) {
+        ERR("Action startup failed: " << e.what());
+        statusLeds.showError(StatusLeds::ERROR_SYSTEM);
+        return 1;
+    }
+
+    statusLeds.setState(StatusLeds::STATE_READY);
+
+    const int ret = runGui(proximitySensor, statusLeds);
+    if (ret != 0) {
+        statusLeds.showError(StatusLeds::ERROR_SYSTEM);
+    }
+
+    return ret;
 }

@@ -2,6 +2,7 @@
 #define __NETWORK_H_
 
 #include <mutex>
+#include <stdexcept>
 #include <string>
 
 #include "json.hpp"

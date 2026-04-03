@@ -1,6 +1,7 @@
 #include <cerrno>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -127,6 +128,11 @@ int Settings::read(std::string settingsFile)
 int Settings::write()
 {
     std::ofstream settingsFile(this->m_settingsFile);
+
+    if (!settingsFile.is_open()) {
+        throw std::runtime_error("Unable to open settings file for writing: " + this->m_settingsFile);
+    }
+
     this->m_settings.clear();
     this->setType(this->settingsType);
     this->m_settings["version"] = SETTINGS_VERSION;
@@ -146,14 +152,17 @@ int Settings::write()
 
     settingsFile << std::setw(4) << this->m_settings << std::endl;
 
+    if (settingsFile.fail()) {
+        throw std::runtime_error("Failed to write settings file: " + this->m_settingsFile);
+    }
+
     return 0;
 }
 
 int Settings::write(std::string settingsFile)
 {
     this->setSettingsFile(settingsFile);
-    this->write();
-    return 0;
+    return this->write();
 }
 
 void Settings::setType(enum settingsType type)
