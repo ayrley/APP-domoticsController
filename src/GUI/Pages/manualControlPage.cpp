@@ -46,14 +46,19 @@ public:
         const float w = static_cast<float>(m_size.x());
         const float h = static_cast<float>(m_size.y());
 
+        const NVGcolor fillTop = nvgRGBAf(m_fillTop.r(), m_fillTop.g(), m_fillTop.b(), m_fillTop.a());
+        const NVGcolor fillBottom = nvgRGBAf(m_fillBottom.r(), m_fillBottom.g(), m_fillBottom.b(), m_fillBottom.a());
+        const NVGcolor borderColor = nvgRGBAf(m_borderColor.r(), m_borderColor.g(), m_borderColor.b(), m_borderColor.a());
+        const NVGcolor textColor = nvgRGBAf(m_textColor.r(), m_textColor.g(), m_textColor.b(), m_textColor.a());
+
         NVGpaint bg = nvgLinearGradient(
             ctx,
             x,
             y,
             x,
             y + h,
-            m_fillTop,
-            m_fillBottom);
+            fillTop,
+            fillBottom);
 
         nvgBeginPath(ctx);
         nvgRoundedRect(ctx, x, y, w, h, 8.0f);
@@ -62,14 +67,14 @@ public:
 
         nvgBeginPath(ctx);
         nvgRoundedRect(ctx, x + 0.5f, y + 0.5f, w - 1.0f, h - 1.0f, 8.0f);
-        nvgStrokeColor(ctx, m_borderColor);
+        nvgStrokeColor(ctx, borderColor);
         nvgStrokeWidth(ctx, 1.0f);
         nvgStroke(ctx);
 
         nvgFontSize(ctx, 15.0f);
         nvgFontFace(ctx, "sans-bold");
         nvgTextAlign(ctx, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        nvgFillColor(ctx, m_textColor);
+        nvgFillColor(ctx, textColor);
         nvgText(ctx, x + w * 0.5f, y + h * 0.5f, m_caption.c_str(), nullptr);
 
         Widget::draw(ctx);
