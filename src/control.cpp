@@ -19,6 +19,7 @@
 #include "control.h"
 #include "debug.h"
 #include "io.h"
+#include "lifeLed.h"
 #include "proximity.h"
 #include "reader.h"
 #include "screen.h"
@@ -299,6 +300,7 @@ int main(void)
 
     Proximity proximitySensor;
     StatusLeds statusLeds;
+    LifeLed lifeLed;
     g_statusLeds = &statusLeds;
 
     statusLeds.setState(StatusLeds::STATE_BOOTING);
@@ -309,6 +311,7 @@ int main(void)
     } catch (const std::exception &e) {
         ERR("IO startup failed: " << e.what());
         statusLeds.showError(StatusLeds::ERROR_IO);
+        lifeLed.stop();
         return 1;
     }
 
@@ -318,6 +321,7 @@ int main(void)
     } catch (const std::exception &e) {
         ERR("Badge startup failed: " << e.what());
         statusLeds.showError(StatusLeds::ERROR_SYSTEM);
+        lifeLed.stop();
         return 1;
     }
 
@@ -327,6 +331,7 @@ int main(void)
     } catch (const std::exception &e) {
         ERR("Settings startup failed: " << e.what());
         statusLeds.showError(StatusLeds::ERROR_CONFIG);
+        lifeLed.stop();
         return 1;
     }
 
@@ -338,6 +343,7 @@ int main(void)
         statusLeds.showError(hasNetworkReadersConfigured()
                                  ? StatusLeds::ERROR_NETWORK
                                  : StatusLeds::ERROR_READER);
+        lifeLed.stop();
         return 1;
     }
 
@@ -347,15 +353,19 @@ int main(void)
     } catch (const std::exception &e) {
         ERR("Action startup failed: " << e.what());
         statusLeds.showError(StatusLeds::ERROR_SYSTEM);
+        lifeLed.stop();
         return 1;
     }
 
+    lifeLed.start();
     statusLeds.setState(StatusLeds::STATE_READY);
 
     const int ret = runGui(proximitySensor, statusLeds);
     if (ret != 0) {
         statusLeds.showError(StatusLeds::ERROR_SYSTEM);
     }
+
+    lifeLed.stop();
 
     return ret;
 }
