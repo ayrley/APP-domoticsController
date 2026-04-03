@@ -46,6 +46,8 @@ private:
 
     std::thread m_statsThread;
     std::atomic<bool> m_stopStatsThread;
+    nanogui::Widget *m_tamperOverlay;
+    bool m_tamperDetected{false};
 
     void startStatsUpdates();
     void updateSystemStats();
@@ -67,6 +69,7 @@ public:
 
     void updateStatus(const std::string &status);
     void setPresenceDetected(bool detected);
+    void setTamperDetected(bool detected);
     void render();
 
     nanogui::Screen *getScreen() const;

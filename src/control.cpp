@@ -25,6 +25,7 @@
 #include "screen.h"
 #include "settings.h"
 #include "statusLeds.h"
+#include "tamperSwitch.h"
 
 namespace
 {
@@ -235,7 +236,7 @@ bool enableNullPlatformIfSupported()
     return true;
 }
 
-int runGui(Proximity &proximitySensor, StatusLeds &statusLeds)
+int runGui(Proximity &proximitySensor, StatusLeds &statusLeds, TamperSwitch &tamperSwitch)
 {
     int ret = 0;
     bool useFramebufferGui = shouldUseFramebufferGui();
@@ -270,6 +271,20 @@ int runGui(Proximity &proximitySensor, StatusLeds &statusLeds)
 				backlight->setBrightness(wakeBrightness);
 			}
 			proximitySensor.resetAbsenceGrace(); });
+        tamperSwitch.setTamperHandler([&screen, &statusLeds](bool detected) {
+            nanogui::async([&screen, detected]() {
+                screen.setTamperDetected(detected);
+            });
+
+            if (detected) {
+                statusLeds.showError(StatusLeds::ERROR_SYSTEM);
+            } else {
+                statusLeds.clearError();
+                statusLeds.setState(StatusLeds::STATE_READY);
+            }
+        });
+
+        tamperSwitch.start();
         proximitySensor.setDetectionHandler([&screen, &backlight, &lastBacklightPresence, &hasLastBacklightPresence, wakeBrightness](bool detected) {
             if (backlight && (!hasLastBacklightPresence || lastBacklightPresence != detected)) {
                 backlight->setBrightness(detected ? wakeBrightness : SCREENSAVER_BACKLIGHT_BRIGHTNESS);
@@ -284,11 +299,13 @@ int runGui(Proximity &proximitySensor, StatusLeds &statusLeds)
         screen.render();
         nanogui::run();
         proximitySensor.stop();
+        tamperSwitch.stop();
         nanogui::shutdown();
     } catch (const std::exception &e) {
         ERR("GUI startup failed: " << e.what());
         statusLeds.showError(StatusLeds::ERROR_SYSTEM);
         proximitySensor.stop();
+        tamperSwitch.stop();
         ret = 1;
     }
 
@@ -301,6 +318,7 @@ int main(void)
     Proximity proximitySensor;
     StatusLeds statusLeds;
     LifeLed lifeLed;
+    TamperSwitch tamperSwitch;
     g_statusLeds = &statusLeds;
 
     statusLeds.setState(StatusLeds::STATE_BOOTING);
@@ -360,7 +378,7 @@ int main(void)
     lifeLed.start();
     statusLeds.setState(StatusLeds::STATE_READY);
 
-    const int ret = runGui(proximitySensor, statusLeds);
+    const int ret = runGui(proximitySensor, statusLeds, tamperSwitch);
     if (ret != 0) {
         statusLeds.showError(StatusLeds::ERROR_SYSTEM);
     }

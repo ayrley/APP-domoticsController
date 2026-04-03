@@ -17,6 +17,7 @@
 #include <thread>
 
 #include <nanogui/nanogui.h>
+#include <nanogui/opengl.h>
 
 namespace {
 constexpr int PAGE_LANDING = 0;
@@ -30,6 +31,52 @@ constexpr float ORBIT_BASE_OVERVIEW = -PI * 0.75f;
 constexpr float ORBIT_BASE_BADGES = -PI * 0.25f;
 constexpr float ORBIT_BASE_MANUAL = PI * 0.25f;
 constexpr float ORBIT_BASE_SETTINGS = PI * 0.75f;
+
+class TamperBorderOverlay : public nanogui::Widget {
+public:
+    TamperBorderOverlay(nanogui::Widget *parent, const bool *detectedFlag)
+        : nanogui::Widget(parent),
+          m_detectedFlag(detectedFlag),
+          m_startTime(std::chrono::steady_clock::now()) {}
+
+    void draw(NVGcontext *ctx) override
+    {
+        if (m_detectedFlag == nullptr || !(*m_detectedFlag)) {
+            return;
+        }
+
+        Widget::draw(ctx);
+
+        const auto now = std::chrono::steady_clock::now();
+        const double seconds = std::chrono::duration<double>(now - m_startTime).count();
+        const float pulse = 0.5f + 0.5f * static_cast<float>(std::sin(seconds * 6.0));
+
+        const int outerAlpha = static_cast<int>(150.0f + pulse * 105.0f);
+        const int innerAlpha = static_cast<int>(90.0f + pulse * 100.0f);
+        const float outerWidth = 5.0f + pulse * 5.0f;
+
+        const float x = static_cast<float>(m_pos.x());
+        const float y = static_cast<float>(m_pos.y());
+        const float w = static_cast<float>(m_size.x());
+        const float h = static_cast<float>(m_size.y());
+
+        nvgBeginPath(ctx);
+        nvgRect(ctx, x + 2.0f, y + 2.0f, w - 4.0f, h - 4.0f);
+        nvgStrokeWidth(ctx, outerWidth);
+        nvgStrokeColor(ctx, nanogui::Color(245, 40, 30, outerAlpha));
+        nvgStroke(ctx);
+
+        nvgBeginPath(ctx);
+        nvgRect(ctx, x + 8.0f, y + 8.0f, w - 16.0f, h - 16.0f);
+        nvgStrokeWidth(ctx, 2.0f);
+        nvgStrokeColor(ctx, nanogui::Color(255, 150, 150, innerAlpha));
+        nvgStroke(ctx);
+    }
+
+private:
+    const bool *m_detectedFlag;
+    std::chrono::steady_clock::time_point m_startTime;
+};
 }
 
 Screen::Screen(int width,
@@ -38,7 +85,9 @@ Screen::Screen(int width,
                              std::function<void()> onBadgesChanged,
                              std::function<void()> onScreensaverWakeRequest)
         : m_onBadgesChanged(std::move(onBadgesChanged)),
-            m_onScreensaverWakeRequest(std::move(onScreensaverWakeRequest)) {
+            m_onScreensaverWakeRequest(std::move(onScreensaverWakeRequest)),
+            m_tamperOverlay(nullptr),
+            m_tamperDetected(false) {
     m_screen = new nanogui::Screen(nanogui::Vector2i(width, height), "Domotic Controller");
     m_stopStatsThread = false;
     const nanogui::Vector2i screenSize = m_screen->size();
@@ -84,6 +133,11 @@ Screen::Screen(int width,
     });
 
     switchPage(PAGE_LANDING);
+
+    m_tamperOverlay = new TamperBorderOverlay(m_screen, &m_tamperDetected);
+    m_tamperOverlay->set_position(nanogui::Vector2i(0, 0));
+    m_tamperOverlay->set_fixed_size(screenSize);
+
     m_screen->perform_layout();
     m_screen->set_visible(true);
 
@@ -269,6 +323,17 @@ void Screen::setPresenceDetected(bool detected) {
 
     m_presenceDetected = detected;
     switchPage(detected ? PAGE_LANDING : PAGE_SCREENSAVER);
+}
+
+void Screen::setTamperDetected(bool detected)
+{
+    if (m_tamperDetected == detected) {
+        return;
+    }
+
+    m_tamperDetected = detected;
+
+    m_screen->redraw();
 }
 
 void Screen::switchPage(int page) {
