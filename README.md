@@ -6,6 +6,7 @@ Core features:
 
 - Local Wiegand readers over device files
 - Network readers over TCP
+- Remote GPIO inputs and outputs over TCP via `LIB-remote`
 - Badge-based access checks
 - Input-triggered actions for outputs
 - NanoGUI touchscreen or framebuffer UI
@@ -34,14 +35,13 @@ Important locations:
 - `src/settings.cpp`: settings parsing and serialization
 - `src/Controller/reader.cpp`: local and TCP reader handling
 - `src/Controller/action.cpp`: GPIO or IP-triggered action execution
-- `src/Controller/tcpServer.cpp`: reusable TCP transport server
-- `src/Controller/badgeProtocol.cpp`: request parsing and JSON reply formatting
 - `src/screen.cpp`: GUI bootstrapping and page wiring
 - `src/GUI/Pages/`: Overview, Badges, Settings, Manual Control, Logging, Screensaver pages
 - `badges/`: one JSON file per badge
 - `ios/`: IO, status LED, life LED, and tamper configuration
 - `factory.settings.domotics`: factory defaults
 - `user.settings.domotics`: runtime/user overrides
+- `../LIB-remote/`: external badge and GPIO TCP transport library used by readers, actions, and IP IO
 
 ## Building
 
@@ -51,6 +51,7 @@ This repository is built with the provided `Makefile`.
 
 - `make`
 - A C++17 compiler available as `g++` or through `CROSS_COMPILE`
+- Built `LIB-remote` dependency available at `../LIB-remote`
 - NanoGUI headers and libraries reachable through `HOST_DIR` and `TARGET_DIR`
 
 The Makefile expects NanoGUI and related headers under paths such as:
@@ -64,6 +65,7 @@ The Makefile expects NanoGUI and related headers under paths such as:
 ### Build commands
 
 ```bash
+make -C ../LIB-remote static
 make
 make debug
 make clean
@@ -76,6 +78,8 @@ make CROSS_COMPILE=arm-linux-gnueabihf-
 ```
 
 The build output is written to `build-make/control` and symlinked as `./control` in the project root.
+
+The main binary links against `../LIB-remote/build/libremote.a`. If that static library is missing, the Makefile will build it automatically.
 
 Useful target:
 
@@ -179,6 +183,8 @@ Example action:
 }
 ```
 
+Outputs may also target remote GPIO endpoints by using an IO with `type: "IP"`. In that case `Action::executeSingle()` sends `name`, `value`, and `duration` through `LIB-remote` instead of toggling a local sysfs GPIO directly.
+
 ### Badge files
 
 Each file under `badges/` contains one badge record. Badge validation is a direct equality check against `badgeNumber`.
@@ -219,6 +225,8 @@ General-purpose IO files must define an `IOs` array:
 }
 ```
 
+For IO entries with `type: "IP"` and input directions (`IN` or `AIN`), the controller starts a TCP listener during initialization. Incoming values are received through `LIB-remote`, latched if changed, and consumed on the next `get()` call.
+
 Special files are consumed directly by peripherals:
 
 - `ios/leds.json`: status LED and life LED mapping
@@ -226,7 +234,7 @@ Special files are consumed directly by peripherals:
 
 ## TCP badge protocol
 
-When a network reader is configured, the controller listens on the configured TCP socket. Each request must contain a single badge payload.
+When a network reader is configured, the controller listens on the configured TCP socket through `LIB-remote`. Each request must contain a single badge payload.
 
 Supported request formats:
 
@@ -278,6 +286,28 @@ Quick test with `nc`:
 ```bash
 printf '123456\n' | nc 127.0.0.1 9000
 printf '{"badge":123456}\n' | nc 127.0.0.1 9000
+```
+
+## Remote GPIO protocol
+
+For IP IO listeners and remote IP outputs, the controller uses `RemoteGpioChannel` from `LIB-remote`.
+
+Supported command payload:
+
+```json
+{"name":"out_bel","value":1,"duration":1000}
+```
+
+Successful reply:
+
+```json
+{"ok":true}
+```
+
+Failure reply:
+
+```json
+{"ok":false,"error":"name mismatch"}
 ```
 
 ## GUI
