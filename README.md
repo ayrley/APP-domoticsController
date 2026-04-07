@@ -1,76 +1,131 @@
 # domoticsController
 
-`domoticsController` is a C++17 home automation controller. It loads settings, GPIO/network I/O, readers, badges, and actions from JSON configuration and then runs continuously.
+`domoticsController` is a C++17 embedded access-control and home automation controller. It loads GPIO and network IO definitions, badge files, reader definitions, and input-triggered actions from JSON configuration, then presents a NanoGUI-based local UI.
 
 Core features:
 
-- Local reader support (Wiegand)
-- Network reader support over TCP
+- Local Wiegand readers over device files
+- Network readers over TCP
 - Badge-based access checks
-- Granted/denied action execution
-- NanoGUI-based runtime UI
+- Input-triggered actions for outputs
+- NanoGUI touchscreen or framebuffer UI
+- Status LEDs, life LED, proximity handling, and tamper detection
 
 ## Runtime architecture
 
-At startup, the controller loads:
+At startup, the controller:
 
-- IO definitions
-- Badge files
-- Settings (user + factory)
-- Readers and actions
+1. Loads IO definitions from `ios/`
+2. Loads badge files from `badges/`
+3. Loads factory and user settings
+4. Starts all configured readers
+5. Starts all configured actions
+6. Starts the life LED and launches the GUI
 
-Readers run on dedicated threads and trigger actions when badge access is granted or denied.
+If `user.settings.domotics` does not exist, it is created from `factory.settings.domotics` on first start.
+
+Reader and action workers run on dedicated threads. The GUI runs in desktop window mode when `DISPLAY` or `WAYLAND_DISPLAY` is available, otherwise it attempts GLFW null-platform mode for framebuffer-style deployments.
 
 ## Project layout
 
 Important locations:
 
-- `src/control.cpp`: Application entrypoint and startup sequence
-- `src/settings.cpp`: Settings parsing and object construction
-- `src/Controller/reader.cpp`: Reader business logic
-- `src/Controller/tcpServer.cpp`: Reusable TCP transport server
-- `src/Controller/badgeProtocol.cpp`: Badge payload parsing and response formatting
-- `src/GUI/`: UI components
-- `factory.settings.domotics`: Factory defaults
-- `user.settings.domotics`: Runtime/user overrides
+- `src/control.cpp`: application entrypoint and startup sequence
+- `src/settings.cpp`: settings parsing and serialization
+- `src/Controller/reader.cpp`: local and TCP reader handling
+- `src/Controller/action.cpp`: GPIO or IP-triggered action execution
+- `src/Controller/tcpServer.cpp`: reusable TCP transport server
+- `src/Controller/badgeProtocol.cpp`: request parsing and JSON reply formatting
+- `src/screen.cpp`: GUI bootstrapping and page wiring
+- `src/GUI/Pages/`: Overview, Badges, Settings, Manual Control, Logging, Screensaver pages
+- `badges/`: one JSON file per badge
+- `ios/`: IO, status LED, life LED, and tamper configuration
+- `factory.settings.domotics`: factory defaults
+- `user.settings.domotics`: runtime/user overrides
+
+## Building
+
+This repository is built with the provided `Makefile`.
+
+### Requirements
+
+- `make`
+- A C++17 compiler available as `g++` or through `CROSS_COMPILE`
+- NanoGUI headers and libraries reachable through `HOST_DIR` and `TARGET_DIR`
+
+The Makefile expects NanoGUI and related headers under paths such as:
+
+- `$(HOST_DIR)/include`
+- `$(HOST_DIR)/include/nanovg`
+- `$(HOST_DIR)/include/nanogui/ext/nanovg/src`
+- `$(HOST_DIR)/usr/lib`
+- `$(TARGET_DIR)/usr/lib`
+
+### Build commands
+
+```bash
+make
+make debug
+make clean
+```
+
+Cross-compilation is supported via `CROSS_COMPILE`:
+
+```bash
+make CROSS_COMPILE=arm-linux-gnueabihf-
+```
+
+The build output is written to `build-make/control` and symlinked as `./control` in the project root.
+
+Useful target:
+
+```bash
+make control-linter
+```
 
 ## Configuration
 
-Main settings file structure:
+### Settings files
+
+The main settings files are `factory.settings.domotics` and `user.settings.domotics`.
+
+Structure:
 
 ```json
 {
 	"type": "USER",
 	"version": 1,
 	"network": {
-		"dhcp": true,
+		"dhcp": false,
 		"dns1": "",
 		"dns2": "",
-		"gateway": "",
-		"ipAddress": "",
-		"netmask": ""
+		"gateway": "192.168.1.1",
+		"ipAddress": "192.168.1.100",
+		"netmask": "255.255.255.0"
 	},
 	"readers": [],
 	"actions": []
 }
 ```
 
-### Reader types
+### Reader configuration
 
-- `location_type: "LOCAL"`: Reader connected to local hardware
-- `location_type: "IP"`: Reader served over TCP
+Supported reader location types:
 
-- `type: "WIEGAND"`: Wiegand reader
-- `type: "OSDP"`: Reserved placeholder in current codebase
+- `location_type: "LOCAL"`: local reader device
+- `location_type: "IP"`: TCP listener for remote readers
 
-### Network reader location format
+Supported reader types:
+
+- `type: "WIEGAND"`: implemented
+- `type: "OSDP"`: placeholder only
 
 For `location_type: "IP"`, `location` must be one of:
 
-- `"<port>"` (binds to `0.0.0.0:<port>`)
-- `"<ipv4>:<port>"` (for example `"127.0.0.1:9000"`)
+- `"<port>"` to bind `0.0.0.0:<port>`
+- `"<ipv4>:<port>"` such as `"127.0.0.1:9000"`
 
-Example reader config:
+Example reader:
 
 ```json
 {
@@ -99,18 +154,81 @@ Example reader config:
 }
 ```
 
+### Action configuration
+
+Actions poll an input and execute one or more outputs when the input becomes active.
+
+Supported input types:
+
+- `input_type: "GPIO"`
+- `input_type: "IP"`
+
+Example action:
+
+```json
+{
+	"name": "Bel",
+	"input_type": "GPIO",
+	"input": "in_bel",
+	"outputs": [
+		{
+			"output": "out_bel",
+			"duration": 1000
+		}
+	]
+}
+```
+
+### Badge files
+
+Each file under `badges/` contains one badge record. Badge validation is a direct equality check against `badgeNumber`.
+
+Example badge file:
+
+```json
+{
+	"firstName": "Ayrton",
+	"lastName": "Leyssens",
+	"badgeNumber": 12345
+}
+```
+
+### IO configuration
+
+The `ios/` directory contains multiple JSON files.
+
+General-purpose IO files must define an `IOs` array:
+
+```json
+{
+	"IOs": [
+		{
+			"type": "LOCAL",
+			"direction": "IN",
+			"name": "in_1",
+			"flank": "UP",
+			"location": "/sys/class/gpio512"
+		},
+		{
+			"type": "LOCAL",
+			"direction": "OUT",
+			"name": "out_bel",
+			"location": "/sys/class/gpio520"
+		}
+	]
+}
+```
+
+Special files are consumed directly by peripherals:
+
+- `ios/leds.json`: status LED and life LED mapping
+- `ios/system.json`: tamper switch configuration
+
 ## TCP badge protocol
 
-When a network reader is configured, the controller listens on the configured TCP socket.
+When a network reader is configured, the controller listens on the configured TCP socket. Each request must contain a single badge payload.
 
-Each request should contain one badge payload. The response is a JSON object containing:
-
-- `valid`: `true` when badge is known
-- `badge`: parsed badge number (or `0` if parse failed)
-- `action`: executed action name (`granted` or `denied` action)
-- `error`: included only on invalid payload
-
-### Supported request formats
+Supported request formats:
 
 Plain numeric payload:
 
@@ -130,114 +248,53 @@ JSON payload with `badgeNumber`:
 {"badgeNumber":"123456"}
 ```
 
-### Example responses
+The reply is a JSON object containing:
 
-Valid badge:
+- `valid`: `true` when the badge exists in `badges/`
+- `badge`: parsed badge number, or `0` on invalid payload
+- `action`: array of output objects from the granted or denied action
+- `error`: included only when the payload is invalid
 
-```json
-{"valid":true,"badge":123456,"action":"AccessGranted"}
-```
-
-Invalid badge:
-
-```json
-{"valid":false,"badge":123456,"action":"AccessDenied"}
-```
-
-Invalid payload:
+Example valid badge reply:
 
 ```json
-{"valid":false,"badge":0,"action":"AccessDenied","error":"invalid badge payload"}
+{"valid":true,"badge":123456,"action":[{"output":"out_green","duration":1000}]}
 ```
 
-### Quick test with netcat
+Example invalid badge reply:
 
-Send plain badge:
+```json
+{"valid":false,"badge":123456,"action":[{"output":"out_red","duration":1000}]}
+```
+
+Example invalid payload reply:
+
+```json
+{"valid":false,"badge":0,"action":[],"error":"invalid badge payload"}
+```
+
+Quick test with `nc`:
 
 ```bash
 printf '123456\n' | nc 127.0.0.1 9000
-```
-
-Send JSON badge:
-
-```bash
 printf '{"badge":123456}\n' | nc 127.0.0.1 9000
 ```
 
 ## GUI
 
-The application includes a NanoGUI dashboard.
+The GUI is NanoGUI-based and currently includes pages for:
 
-Backend selection is runtime-based:
+- landing screen
+- badges
+- overview
+- settings
+- manual control
+- logging
+- screensaver
 
-- If `DISPLAY` or `WAYLAND_DISPLAY` is present, it uses desktop window mode
-- Otherwise it attempts GLFW null platform mode (framebuffer/headless style)
+The GUI also integrates:
 
-## Build with CMake
-
-### Requirements
-
-- CMake 3.16+
-- C++17 compiler
-- NanoGUI available at the path in `NANOGUI_ROOT` (default in `CMakeLists.txt`)
-
-### Configure and build
-
-```bash
-cmake -S . -B build-cmake
-cmake --build build-cmake -j
-```
-
-Helper script:
-
-```bash
-./build_cmake.sh
-```
-
-With extra CMake arguments:
-
-```bash
-./build_cmake.sh -DCMAKE_BUILD_TYPE=Release
-```
-
-Binary path:
-
-- `build-cmake/control`
-
-Linter target:
-
-```bash
-cmake --build build-cmake --target control-linter
-```
-
-## Build with Make
-
-### Requirements
-
-- `make`
-- C++ compiler available via `$(CXX)`
-
-### Build
-
-```bash
-make
-```
-
-Binary path:
-
-- `./control`
-
-Useful targets:
-
-```bash
-make clean
-make control-linter
-```
-
-## Notes
-
-- Badge validation compares incoming badge number with configured `badgeNumber` entries from badge files.
-- Network handling is split for reuse:
-	- `TcpServer`: transport
-	- `BadgeProtocol`: payload and reply protocol
-	- `Reader`: access decision and action dispatch
+- proximity-based screensaver wake behavior
+- backlight brightness control when available
+- tamper indication overlay
+- runtime badge cache reload from the badge management page
