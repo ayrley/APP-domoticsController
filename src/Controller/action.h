@@ -26,6 +26,7 @@ private:
 
     enum InputType m_inputType;
 
+    bool setRemoteGpio(IO &io, int value, int durationMs);
     void executeSingle(ActionIo io);
     void run();
 

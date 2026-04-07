@@ -8,28 +8,10 @@
 #include <stdint.h>
 #include <unistd.h>
 
+#include <system/File.hpp>
+
 #include "debug.h"
 #include "io.h"
-
-namespace
-{
-int parseIntOrMinusOne(const char *buffer)
-{
-    if (!buffer || buffer[0] == '\0') {
-        return -1;
-    }
-
-    char *endPtr = nullptr;
-    errno = 0;
-    long value = std::strtol(buffer, &endPtr, 10);
-
-    if (endPtr == buffer || errno != 0) {
-        return -1;
-    }
-
-    return static_cast<int>(value);
-}
-} // namespace
 
 IO::IO()
 {
@@ -42,7 +24,6 @@ IO::~IO()
 
 int IO::exportIo()
 {
-    int fptr;
     std::string gpioExportLocation = "";
     std::string exportLocation = "/sys/class/gpio/export";
     std::string gpioNumber;
@@ -54,22 +35,8 @@ int IO::exportIo()
 
     gpioNumber = this->m_location.substr(this->m_location.find("gpio") + 1);
 
-    fptr = open(exportLocation.c_str(), O_WRONLY);
-    if (!fptr)
-        return fptr;
-
-    write(fptr, gpioNumber.c_str(), strlen(gpioNumber.c_str()));
-    close(fptr);
-
-    gpioExportLocation = this->m_location + "/direction";
-    fptr = open(gpioExportLocation.c_str(), O_WRONLY);
-
-    if (this->m_direction == IO_DIR_IN)
-        write(fptr, "in", 2);
-    else if (this->m_direction == IO_DIR_OUT)
-        write(fptr, "out", 3);
-
-    close(fptr);
+    File::writeFile(exportLocation, gpioNumber);
+    File::writeFile(this->m_location + "/direction", this->m_direction == IO_DIR_IN ? "in" : "out");
 
     return 0;
 }
@@ -86,41 +53,24 @@ void IO::set()
 
 void IO::set(bool high)
 {
-    int fptr;
     std::string gpioValue = this->m_location + "/value";
 
     if (!this->m_exported)
         this->exportIo();
 
-    fptr = open(gpioValue.c_str(), O_WRONLY);
-    if (!fptr)
-        return;
-
-    write(fptr, high ? "1" : "0", 1);
-    close(fptr);
+    File::writeFile(gpioValue, high ? "1" : "0");
 }
 
 int IO::getAnalogIo()
 {
-    int fptr;
-    char buffer[16] = {0};
+    std::string buffer;
 
-    fptr = open(this->m_location.c_str(), O_RDONLY);
-    if (!fptr)
-        return -1;
+    File::catFile(this->m_location, buffer);
 
-    ssize_t bytesRead = read(fptr, buffer, 8);
-    close(fptr);
-
-    if (bytesRead <= 0) {
-        DBG("Analog IO read failed for location: " + this->m_location);
-        return -1;
-    }
-
-    int parsedValue = parseIntOrMinusOne(buffer);
+    int parsedValue = stoi(buffer);
     if (parsedValue < 0) {
         DBG("Analog IO parse failed for location: " + this->m_location +
-            ", raw='" + std::string(buffer) + "'");
+            ", raw='" + buffer + "'");
     }
 
     return parsedValue;
@@ -128,26 +78,16 @@ int IO::getAnalogIo()
 
 int IO::getDigitalIo()
 {
-    int fptr;
-    char buffer[16] = {0};
+    std::string buffer;
+
     std::string gpioValue = this->m_location + "/value";
 
-    fptr = open(gpioValue.c_str(), O_RDONLY);
-    if (!fptr)
-        return -1;
+    File::catFile(gpioValue, buffer);
 
-    ssize_t bytesRead = read(fptr, buffer, 5);
-    close(fptr);
-
-    if (bytesRead <= 0) {
-        DBG("Digital IO read failed for location: " + gpioValue);
-        return -1;
-    }
-
-    int parsedValue = parseIntOrMinusOne(buffer);
+    int parsedValue = stoi(buffer);
     if (parsedValue < 0) {
         DBG("Digital IO parse failed for location: " + gpioValue +
-            ", raw='" + std::string(buffer) + "'");
+            ", raw='" + buffer + "'");
     }
 
     return parsedValue;

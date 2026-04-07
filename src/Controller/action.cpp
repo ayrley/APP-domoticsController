@@ -9,11 +9,33 @@
 #include "debug.h"
 #include "eventLog.h"
 #include "io.h"
+#include "remoteGpioChannel.h"
 
 extern std::vector<IO *> *g_ios;
 
 Action::Action()
 {
+}
+
+bool Action::setRemoteGpio(IO &io, int value, int durationMs)
+{
+    RemoteGpioChannel channel(io.getLocation());
+    RemoteGpioCommand command;
+    command.name = io.getName();
+    command.value = value;
+    command.duration = durationMs;
+
+    RemoteGpioReply reply;
+    if (!channel.send(command, reply)) {
+        return false;
+    }
+
+    if (!reply.ok) {
+        ERR("Remote GPIO endpoint rejected command for '" << io.getName() << "': " << reply.error);
+        return false;
+    }
+
+    return true;
 }
 
 json Action::getJson()
@@ -99,6 +121,16 @@ void Action::executeSingle(ActionIo io)
     std::string outputName = ioPtr->getName();
     if (outputName.empty()) {
         outputName = ioPtr->getLocation();
+    }
+
+    if (ioPtr->getLocationType() == IO_LOC_IP) {
+        if (this->setRemoteGpio(*ioPtr, 1, io.getDuration())) {
+            EventLog::addOutputToggle(outputName, true, "action:" + this->m_name);
+            if (io.getDuration() > 0) {
+                EventLog::addOutputToggle(outputName, false, "action:" + this->m_name);
+            }
+        }
+        return;
     }
 
     ioPtr->set();

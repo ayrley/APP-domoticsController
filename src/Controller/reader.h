@@ -66,7 +66,7 @@ private:
 
     int getWiegandBadge(uint64_t *badge);
     int getKeypad(uint64_t *cardNumber, int count);
-    int plainTextCode(char *binaryCardString, uint64_t *cardNumber, int length);
+    int plainTextCode(const char *binaryCardString, uint64_t *cardNumber, int length);
 
 public:
     Reader();

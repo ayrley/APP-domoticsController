@@ -10,13 +10,14 @@
 #include <stdint.h>
 #include <unistd.h>
 
+#include <system/File.hpp>
+
 #include "action.h"
 #include "badge.h"
-#include "badgeProtocol.h"
 #include "debug.h"
 #include "eventLog.h"
 #include "reader.h"
-#include "tcpServer.h"
+#include "remoteBadgeChannel.h"
 
 Reader::Reader()
 {
@@ -65,7 +66,7 @@ void Reader::start()
     this->m_runner.detach();
 }
 
-int Reader::plainTextCode(char *binaryCardString, uint64_t *cardNumber,
+int Reader::plainTextCode(const char *binaryCardString, uint64_t *cardNumber,
                           int length)
 {
     int i;
@@ -120,8 +121,8 @@ int Reader::getKeypad(uint64_t *cardNumber, int count)
 
 int Reader::getWiegandBadge(uint64_t *badge)
 {
-    char wiegandString[128];
-    char buffer[33] = {0};
+    std::string wiegandString;
+    std::string buffer;
     int f_count, f_wiegand;
     int count;
     int readVal;
@@ -131,58 +132,34 @@ int Reader::getWiegandBadge(uint64_t *badge)
     std::string countPath = "/sys/class/idtech/" + this->m_readerLocation +
                             "/device/count";
 
-    f_count = open(countPath.c_str(), O_RDONLY);
-    if (!f_count)
-        return -ENOENT;
+    File::catFile(countPath, buffer);
+    count = stol(buffer);
 
-    memset(buffer, 0, 33);
-    memset(wiegandString, 0, 128);
-
-    read(f_count, buffer, 32);
-    close(f_count);
-    count = strtol(buffer, NULL, 10);
-
-    f_wiegand = open(devicePath.c_str(), O_RDONLY);
-    if (!f_wiegand)
-        return -ENOENT;
-
-    readVal = read(f_wiegand, wiegandString, 64);
-    close(f_wiegand);
+    File::catFile(devicePath, wiegandString);
+    readVal = wiegandString.size();
 
     if (readVal < 0)
         return -EINVAL;
 
-    this->plainTextCode(wiegandString, &cardNumber, count);
+    this->plainTextCode(wiegandString.c_str(), &cardNumber, count);
     this->getKeypad(&cardNumber, count);
     *badge = cardNumber;
 
     return 0;
 }
 
+
 void Reader::setWiegandLed(enum ledColor color)
 {
-    int fptr;
-    char buffer[16];
+    std::string buffer;
     std::string ledPath = "/sys/class/idtech/" + this->m_readerLocation +
                           "/device/color";
 
-    fptr = open(ledPath.c_str(), O_WRONLY);
-    if (!fptr)
-        return;
-
-    sprintf(buffer, "%d", color);
-    write(fptr, buffer, strlen(buffer));
-    close(fptr);
+    File::writeFile(ledPath, std::to_string(color));
 
     std::this_thread::sleep_for(std::chrono::milliseconds(this->m_ledDuration));
 
-    fptr = open(ledPath.c_str(), O_WRONLY);
-    if (!fptr)
-        return;
-
-    sprintf(buffer, "0");
-    write(fptr, buffer, strlen(buffer));
-    close(fptr);
+    File::writeFile(ledPath, "0");
 }
 
 void Reader::handleWiegandReader()
@@ -229,18 +206,11 @@ void Reader::handleOsdpReader()
 
 void Reader::handleNetworkReader()
 {
-    TcpServer server;
-    BadgeProtocol protocol;
+    RemoteBadgeChannel channel(this->m_readerLocation);
     LOG("Network reader '" << this->m_readerName << "' is starting on " << this->m_readerLocation);
 
-    bool started = server.listenAndServe(this->m_readerLocation, [this, &protocol](const std::string &payload) {
-        uint64_t badge = 0;
-        bool validPayload = protocol.parseBadgeFromPayload(payload, badge);
-
-        if (!validPayload) {
-            DBG("Invalid badge payload received: " + payload);
-            return protocol.buildReply(false, 0, json::array(), false);
-        }
+    bool started = channel.serve([this](uint64_t badge) {
+        RemoteBadgeReply reply;
 
         bool validBadge = false;
         Action *actionToExecute = this->m_deniedAction;
@@ -267,17 +237,19 @@ void Reader::handleNetworkReader()
 
         EventLog::addBadgeRead(this->m_readerName, badge, validBadge);
 
-        json actionOutputs = json::array();
+        reply.valid = validBadge;
+        reply.badge = badge;
+        reply.action = json::array();
+        reply.validPayload = true;
+
         if (actionToExecute) {
             json actionJson = actionToExecute->getJson();
             if (actionJson.contains("outputs")) {
-                actionOutputs = actionJson["outputs"];
+                reply.action = actionJson["outputs"];
             }
         }
 
-        return protocol.buildReply(validBadge, badge,
-                                   actionOutputs,
-                                   validPayload);
+        return reply;
     });
 
     if (!started) {
