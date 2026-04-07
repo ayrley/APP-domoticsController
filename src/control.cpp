@@ -163,7 +163,6 @@ int loadIos()
         for (auto &singleIo : ioFileObject["IOs"].items()) {
             IO *io = new IO();
             io->fromJson(singleIo.value());
-            io->start();
             g_ios->push_back(io);
         }
     }
