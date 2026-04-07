@@ -10,7 +10,7 @@ BUILD_DIR := build-make
 OBJ_DIR := $(BUILD_DIR)/obj
 TARGET := $(BUILD_DIR)/$(NAME)
 COMPILER_STAMP := $(BUILD_DIR)/.compiler
- 
+
 SRCS	:= 	$(wildcard src/*.cpp) \
 			$(wildcard src/Controller/*.cpp) \
 			$(wildcard src/Peripherals/*.cpp) \
@@ -32,9 +32,13 @@ INCS 	:= 	-I. \
 		-Isrc/GUI/Pages \
 		-I$(HOST_DIR)/include \
 		-I$(HOST_DIR)/include/nanovg \
-		-I$(HOST_DIR)/include/nanogui/ext/nanovg/src
+		-I$(HOST_DIR)/include/nanogui/ext/nanovg/src \
+		-I$(HOST_DIR)/include/LIB-funcmod/ \
+		-I$(HOST_DIR)/include/LIB-remote/
 	 	
-LIBS	:= -lnanogui
+LIBS	:= -lnanogui \
+			-lremote \
+			-lfuncmod
 
 LIBDIR	:= 	-L$(HOST_DIR)/usr/lib \
 		-L$(TARGET_DIR)/usr/lib \
@@ -72,7 +76,7 @@ $(COMPILER_STAMP): | $(BUILD_DIR)
 	@if [ -f $@ ] && [ "`cat $@`" != "$(CXX)" ]; then rm -rf $(OBJ_DIR) $(TARGET); fi
 	@printf '%s\n' '$(CXX)' > $@
 
-$(TARGET): prepare-build $(OBJS) | $(BUILD_DIR)
+$(TARGET): prepare-build $(OBJS) $(LIBREMOTE_STATIC) | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $(OBJS) $(LDFLAGS) $(LIBDIR) $(LIBS)
 	ln -sf $(TARGET) $(NAME)
 
