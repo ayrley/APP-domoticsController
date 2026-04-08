@@ -103,7 +103,7 @@ $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
 	
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -rf $(BUILD_DIR) $(NAME)
 	
 $(NAME)-linter:
 	clang-tidy $(SRCS) -- $(INCS) > clang-tidy-output.txt 2>&1
