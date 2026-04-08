@@ -1,4 +1,4 @@
-control
+master-control
 
 *.o
 *.obj
@@ -10,4 +10,5 @@ ios/*.json
 
 build-cmake/
 build-make/
+logs/
 .vscode/
