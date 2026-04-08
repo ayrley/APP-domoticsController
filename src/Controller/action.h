@@ -5,12 +5,15 @@
 #include <string>
 #include <vector>
 
+#include <croncpp.h>
+
 #include "actionIo.h"
 #include "io.h"
 
 enum InputType {
     IN_GPIO = 0,
-    IN_IP
+    IN_IP,
+    IN_TIME
 };
 
 class Action
@@ -23,6 +26,8 @@ private:
     std::string m_name;
 
     std::thread m_runner;
+
+    cron::cronexpr m_cronExpression;
 
     enum InputType m_inputType;
 

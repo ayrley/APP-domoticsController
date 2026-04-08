@@ -4,12 +4,15 @@
 #include <string>
 #include <thread>
 
+#include <croncpp.h>
+
+#include <remoteGpioChannel.h>
+
 #include "action.h"
 #include "actionIo.h"
 #include "debug.h"
 #include "eventLog.h"
 #include "io.h"
-#include "remoteGpioChannel.h"
 
 extern std::vector<IO *> *g_ios;
 
@@ -80,14 +83,29 @@ void Action::fromJson(const json &jsonObject)
             this->m_inputType = IN_GPIO;
         else if (jsonObject.contains("input_type") && jsonObject["input_type"] == "IP")
             this->m_inputType = IN_IP;
+        else if (jsonObject.contains("input_type") && jsonObject["input_type"] == "TIME")
+            this->m_inputType = IN_TIME;
     }
 
-    if (jsonObject.contains("input")) {
+    if (jsonObject.contains("input") && this->m_inputType != IN_TIME) {
         if (jsonObject.contains("input") && !jsonObject["input"].is_null()) {
             for (IO *io : *g_ios) {
                 if (io->getName() == jsonObject["input"])
                     this->m_input = *io;
             }
+        }
+    }
+
+    if (this->m_inputType == IN_TIME) {
+        if (jsonObject.contains("cron") && !jsonObject["cron"].is_null()) {
+            try {
+                std::string cronExpr = jsonObject["cron"];
+                this->m_cronExpression = cron::make_cron(cronExpr);
+            } catch (const std::exception &e) {
+                ERR("Invalid cron expression in action '" << this->m_name << "': " << e.what());
+            }
+        } else {
+            ERR("No cron expression found for time-based action '" << this->m_name << "'");
         }
     }
 
@@ -101,6 +119,11 @@ void Action::fromJson(const json &jsonObject)
                         if (singleOutput.value().contains("duration")) {
                             actionIo.setDuration(singleOutput.value()["duration"]);
                         }
+
+                        if (singleOutput.value().contains("inverted")) {
+                            actionIo.setInverted(singleOutput.value()["inverted"]);
+                        }
+
                         this->m_outputs.push_back(actionIo);
                     }
                 }
@@ -133,12 +156,12 @@ void Action::executeSingle(ActionIo io)
         return;
     }
 
-    ioPtr->set();
+    io.set();
     EventLog::addOutputToggle(outputName, true, "action:" + this->m_name);
 
     if (io.getDuration() > 0) {
         std::this_thread::sleep_for(std::chrono::milliseconds(io.getDuration()));
-        ioPtr->clear();
+        io.clear();
         EventLog::addOutputToggle(outputName, false, "action:" + this->m_name);
     }
 }
@@ -156,12 +179,20 @@ void Action::execute()
 void Action::run()
 {
     while (1) {
-        if (this->m_input.get())
-            this->execute();
+        if (this->m_inputType == IN_TIME) {
+            auto now = std::chrono::system_clock::now();
+            auto next = cron::cron_next(this->m_cronExpression, now);
+            std::this_thread::sleep_until(next);
+        } else {
+            while (!this->m_input.get()) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(250));
+            }
+        }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        this->execute();
     }
 }
+
 void Action::start()
 {
     this->m_runner = std::thread(&Action::run, this);
