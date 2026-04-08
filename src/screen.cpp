@@ -14,6 +14,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
+#include <ctime>
 #include <string>
 #include <thread>
 
@@ -34,6 +35,38 @@ constexpr float ORBIT_BASE_BADGES = -PI * 0.1f;
 constexpr float ORBIT_BASE_MANUAL = PI * 0.3f;
 constexpr float ORBIT_BASE_SETTINGS = PI * 0.7f;
 constexpr float ORBIT_BASE_LOGGING = PI * 1.1f;
+
+std::string formatDutchDate(const std::tm &localTime)
+{
+    static const char *kWeekdays[] = {
+        "zondag", "maandag", "dinsdag", "woensdag", "donderdag", "vrijdag", "zaterdag"
+    };
+    static const char *kMonths[] = {
+        "januari", "februari", "maart", "april", "mei", "juni",
+        "juli", "augustus", "september", "oktober", "november", "december"
+    };
+
+    char buffer[96] = {0};
+    std::snprintf(buffer,
+                  sizeof(buffer),
+                  "%s %d %s %d",
+                  kWeekdays[localTime.tm_wday],
+                  localTime.tm_mday,
+                  kMonths[localTime.tm_mon],
+                  localTime.tm_year + 1900);
+    return std::string(buffer);
+}
+
+std::string formatDutchTime(const std::tm &localTime)
+{
+    char buffer[16] = {0};
+    std::snprintf(buffer,
+                  sizeof(buffer),
+                  "%02d:%02d",
+                  localTime.tm_hour,
+                  localTime.tm_min);
+    return std::string(buffer);
+}
 
 class TamperBorderOverlay : public nanogui::Widget {
 public:
@@ -305,13 +338,19 @@ void Screen::startStatsUpdates() {
             float cpuUsageFraction = static_cast<float>(System::cpuUsageFraction(previousSample, currentSample));
             std::string ramUsage = System::readRamUsage();
             float ramUsageFraction = static_cast<float>(System::readRamUsageFraction());
+            const std::time_t nowTime = std::time(nullptr);
+            std::tm localTime {};
+            localtime_r(&nowTime, &localTime);
+            std::string dateCaption = formatDutchDate(localTime);
+            std::string timeCaption = formatDutchTime(localTime);
             previousSample = currentSample;
 
-            nanogui::async([this, cpuUsage, cpuUsageFraction, ramUsage, ramUsageFraction]() {
+            nanogui::async([this, cpuUsage, cpuUsageFraction, ramUsage, ramUsageFraction, dateCaption, timeCaption]() {
                 float loadFactor = (cpuUsageFraction + ramUsageFraction) * 0.5f;
                 if (m_overviewPage) {
                     m_overviewPage->setCpu(cpuUsage, cpuUsageFraction);
                     m_overviewPage->setRam(ramUsage, ramUsageFraction);
+                    m_overviewPage->setDateTime(dateCaption, timeCaption);
                 }
                 m_background->setLoadFactor(loadFactor);
                 m_screen->perform_layout();
@@ -324,10 +363,16 @@ void Screen::startStatsUpdates() {
 void Screen::updateSystemStats() {
     std::string ramUsage = System::readRamUsage();
     float ramUsageFraction = static_cast<float>(System::readRamUsageFraction());
+    const std::time_t nowTime = std::time(nullptr);
+    std::tm localTime {};
+    localtime_r(&nowTime, &localTime);
+    std::string dateCaption = formatDutchDate(localTime);
+    std::string timeCaption = formatDutchTime(localTime);
 
     if (m_overviewPage) {
         m_overviewPage->setCpu("measuring...", 0.0f);
         m_overviewPage->setRam(ramUsage, ramUsageFraction);
+        m_overviewPage->setDateTime(dateCaption, timeCaption);
     }
     m_background->setLoadFactor(ramUsageFraction * 0.5f);
     m_screen->perform_layout();

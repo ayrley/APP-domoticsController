@@ -38,6 +38,12 @@ OverviewPage::OverviewPage(nanogui::Widget *parent,
 
     m_ramLabel = createMetricBlock(contentPanel(), "RAM Usage", "collecting...", &m_ramBar);
     m_ramLabel->set_font_size(18);
+
+    m_dateLabel = new nanogui::Label(contentPanel(), "Datum: --", "sans");
+    m_dateLabel->set_font_size(18);
+
+    m_timeLabel = new nanogui::Label(contentPanel(), "Tijd: --:--", "sans-bold");
+    m_timeLabel->set_font_size(24);
 }
 
 void OverviewPage::perform_layout(NVGcontext *ctx)
@@ -76,5 +82,15 @@ void OverviewPage::setRam(const std::string &ramCaption, float fraction)
     }
     if (m_ramBar) {
         m_ramBar->set_value(fraction);
+    }
+}
+
+void OverviewPage::setDateTime(const std::string &dateCaption, const std::string &timeCaption)
+{
+    if (m_dateLabel) {
+        m_dateLabel->set_caption("Datum: " + dateCaption);
+    }
+    if (m_timeLabel) {
+        m_timeLabel->set_caption("Tijd: " + timeCaption);
     }
 }

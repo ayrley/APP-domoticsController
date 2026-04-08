@@ -22,12 +22,15 @@ public:
     void setStatus(const std::string &status);
     void setCpu(const std::string &cpuCaption, float fraction);
     void setRam(const std::string &ramCaption, float fraction);
+    void setDateTime(const std::string &dateCaption, const std::string &timeCaption);
     void perform_layout(NVGcontext *ctx) override;
 
 private:
     nanogui::Label *m_statusLabel{nullptr};
     nanogui::Label *m_cpuLabel{nullptr};
     nanogui::Label *m_ramLabel{nullptr};
+    nanogui::Label *m_dateLabel{nullptr};
+    nanogui::Label *m_timeLabel{nullptr};
     nanogui::ProgressBar *m_cpuBar{nullptr};
     nanogui::ProgressBar *m_ramBar{nullptr};
     DomeButton *m_rebootButton{nullptr};    
