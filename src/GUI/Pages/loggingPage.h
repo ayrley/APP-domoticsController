@@ -2,6 +2,7 @@
 #define __LOGGING_PAGE_H
 
 #include <atomic>
+#include <cstdint>
 #include <functional>
 #include <thread>
 
@@ -33,9 +34,10 @@ private:
 
     void startRefreshLoop();
     void stopRefreshLoop();
-    void refreshEntries();
+    void refreshEntries(bool force = false);
     bool matchesFilter(const std::string &message) const;
     void setFilter(enum logFilter filter);
+    void maybeReportRefreshStats();
 
     nanogui::Screen *m_nanoScreen{nullptr};
     nanogui::Widget *m_listPanel{nullptr};
@@ -47,6 +49,11 @@ private:
     DomeButton *m_clearButton{nullptr};
 
     enum logFilter m_activeFilter{FILTER_ALL};
+    std::uint64_t m_lastModelHash{0};
+    std::uint64_t m_refreshEvaluated{0};
+    std::uint64_t m_refreshSkippedHidden{0};
+    std::uint64_t m_refreshSkippedUnchanged{0};
+    std::uint64_t m_refreshRendered{0};
 
     std::thread m_refreshThread;
     std::atomic<bool> m_stopRefreshThread{false};

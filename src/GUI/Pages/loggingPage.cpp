@@ -4,11 +4,44 @@
 #include "eventLog.h"
 
 #include <chrono>
+#include <cstdio>
+#include <cstdint>
 
 #include <nanogui/label.h>
 #include <nanogui/layout.h>
 #include <nanogui/screen.h>
 #include <nanogui/vscrollpanel.h>
+
+namespace
+{
+std::uint64_t hashEventEntries(const std::vector<EventLogEntry> &entries,
+                               const int activeFilter)
+{
+    constexpr std::uint64_t fnvOffsetBasis = 1469598103934665603ULL;
+    constexpr std::uint64_t fnvPrime = 1099511628211ULL;
+
+    std::uint64_t hash = fnvOffsetBasis;
+
+    auto hashString = [&](const std::string &value) {
+        for (const unsigned char ch : value) {
+            hash ^= static_cast<std::uint64_t>(ch);
+            hash *= fnvPrime;
+        }
+        hash ^= 0xFF;
+        hash *= fnvPrime;
+    };
+
+    hash ^= static_cast<std::uint64_t>(activeFilter);
+    hash *= fnvPrime;
+
+    for (const auto &entry : entries) {
+        hashString(entry.timestamp);
+        hashString(entry.message);
+    }
+
+    return hash;
+}
+}
 
 LoggingPage::LoggingPage(nanogui::Widget *parent,
                          std::function<void()> onHome) :
@@ -37,7 +70,7 @@ LoggingPage::LoggingPage(nanogui::Widget *parent,
     m_tamperButton = new DomeButton(toolbar, "Tamper", [this]() { setFilter(FILTER_TAMPER); });
     m_clearButton = new DomeButton(toolbar, "Clear", [this]() {
         EventLog::clear();
-        refreshEntries();
+        refreshEntries(true);
     });
 
     m_allButton->set_fixed_size(nanogui::Vector2i(96, 34));
@@ -55,7 +88,7 @@ LoggingPage::LoggingPage(nanogui::Widget *parent,
     m_listPanel = new nanogui::Widget(scrollPanel);
     m_listPanel->set_layout(new nanogui::GroupLayout(0, 4, 8, 0));
 
-    refreshEntries();
+    refreshEntries(true);
     startRefreshLoop();
 }
 
@@ -78,7 +111,7 @@ void LoggingPage::startRefreshLoop()
 
             if (m_nanoScreen) {
                 nanogui::async([this]() {
-                    refreshEntries();
+                    refreshEntries(false);
                 });
             }
         }
@@ -94,19 +127,35 @@ void LoggingPage::stopRefreshLoop()
     }
 }
 
-void LoggingPage::refreshEntries()
+void LoggingPage::refreshEntries(bool force)
 {
+    ++m_refreshEvaluated;
+
     if (!m_listPanel) {
         return;
     }
 
-    while (!m_listPanel->children().empty()) {
-        auto *child = m_listPanel->children().back();
-        m_listPanel->remove_child(child);
-        delete child;
+    if (!force && !visible()) {
+        ++m_refreshSkippedHidden;
+        maybeReportRefreshStats();
+        return;
     }
 
     const auto entries = EventLog::getRecent(300);
+    const std::uint64_t modelHash = hashEventEntries(entries, static_cast<int>(m_activeFilter));
+    if (!force && modelHash == m_lastModelHash) {
+        ++m_refreshSkippedUnchanged;
+        maybeReportRefreshStats();
+        return;
+    }
+    m_lastModelHash = modelHash;
+    ++m_refreshRendered;
+
+    while (!m_listPanel->children().empty()) {
+        auto *child = m_listPanel->children().back();
+        m_listPanel->remove_child(child);
+    }
+
     std::size_t shown = 0;
 
     if (entries.empty()) {
@@ -139,6 +188,8 @@ void LoggingPage::refreshEntries()
         m_nanoScreen->perform_layout();
         m_nanoScreen->redraw();
     }
+
+    maybeReportRefreshStats();
 }
 
 bool LoggingPage::matchesFilter(const std::string &message) const
@@ -173,5 +224,23 @@ void LoggingPage::setFilter(enum logFilter filter)
         m_tamperButton->setSelected(filter == FILTER_TAMPER);
     }
 
-    refreshEntries();
+    refreshEntries(true);
+}
+
+void LoggingPage::maybeReportRefreshStats()
+{
+#if defined(DEBUG)
+    constexpr std::uint64_t kReportEvery = 40;
+    if (m_refreshEvaluated == 0 || (m_refreshEvaluated % kReportEvery) != 0) {
+        return;
+    }
+
+    std::fprintf(
+        stderr,
+        "[GUI][LoggingPage] refresh stats: eval=%llu rendered=%llu skipped_hidden=%llu skipped_unchanged=%llu\n",
+        static_cast<unsigned long long>(m_refreshEvaluated),
+        static_cast<unsigned long long>(m_refreshRendered),
+        static_cast<unsigned long long>(m_refreshSkippedHidden),
+        static_cast<unsigned long long>(m_refreshSkippedUnchanged));
+#endif
 }
