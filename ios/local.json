@@ -26,6 +26,12 @@
       "direction": "OUT",
       "name": "out_bel",
       "location": "/sys/class/gpio520"
+    },
+    {
+      "type": "LOCAL",
+      "direction": "OUT",
+      "name": "oprit_lampjes",
+      "location": "/sys/class/gpio525"
     }
   ]
 }
