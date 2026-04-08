@@ -65,6 +65,11 @@ int IO::getAnalogIo()
 {
     std::string buffer;
 
+    if (!File::exists(this->m_location)) {
+        DBG("Analog IO location does not exist: " + this->m_location);
+        return 0;
+    }
+
     File::catFile(this->m_location, buffer);
 
     int parsedValue = stoi(buffer);
@@ -81,6 +86,11 @@ int IO::getDigitalIo()
     std::string buffer;
 
     std::string gpioValue = this->m_location + "/value";
+
+     if (!File::exists(this->m_location)) {
+        DBG("Digital IO location does not exist: " + this->m_location);
+        return 0;
+    }
 
     File::catFile(gpioValue, buffer);
 

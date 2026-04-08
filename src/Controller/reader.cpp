@@ -132,6 +132,19 @@ int Reader::getWiegandBadge(uint64_t *badge)
     std::string countPath = "/sys/class/idtech/" + this->m_readerLocation +
                             "/device/count";
 
+
+    if (!File::exists(countPath)) {
+        DBG("Wiegand reader count path does not exist: " + countPath);
+        *badge = 0;
+        return -EINVAL;
+    }
+
+    if (!File::exists(devicePath)) {
+        DBG("Wiegand reader device path does not exist: " + devicePath);
+        *badge = 0;
+        return -EINVAL;
+    }
+
     File::catFile(countPath, buffer);
     count = stol(buffer);
 
