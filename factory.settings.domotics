@@ -76,6 +76,27 @@
 					"duration": 1000
 				}
     		]
-    	}
+    	},
+		{
+            "input_type": "TIME",
+            "name": "Oprit_aan",
+            "cron": "0 19 * * *",
+            "outputs": [
+                {
+                    "output": "oprit_lampjes"
+                }
+            ]
+        },
+        {
+            "input_type": "TIME",
+            "name": "Oprit_uit",
+            "cron": "0 23 * * *",
+            "outputs": [
+                {
+                    "inverted" : true,
+                    "output": "oprit_lampjes"
+                }
+            ]
+        }
     ]
 }
