@@ -11,6 +11,8 @@ class ActionIo
 {
 private:
     int m_duration;
+    bool m_inverted = false;
+
     IO *m_io;
 
 public:
@@ -18,9 +20,14 @@ public:
     ActionIo(IO *io);
 
     void setDuration(int duration);
+    void setInverted(bool inverted);
     void setIo(IO *io);
+    void set();
+    void clear();
 
     int getDuration() { return this->m_duration; }
+
+    bool isInverted() { return this->m_inverted; }
 
     IO *getIo() { return this->m_io; }
 };
