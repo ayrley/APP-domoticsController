@@ -1,4 +1,4 @@
-NAME := control
+NAME := master-control
 VERSION := 0.1
 DISTNAME := $(NAME)-$(VERSION)
 
@@ -7,7 +7,7 @@ CXX := $(CROSS_COMPILE)g++
 endif
 
 BUILD_DIR := build-make
-OBJ_DIR := $(BUILD_DIR)/obj
+OBJ_DIR := $(BUILD_DIR)/objNAME
 TARGET := $(BUILD_DIR)/$(NAME)
 COMPILER_STAMP := $(BUILD_DIR)/.compiler
 
@@ -42,7 +42,6 @@ LIBS	:= -lnanogui \
 
 LIBDIR	:= 	-L$(HOST_DIR)/usr/lib \
 		-L$(TARGET_DIR)/usr/lib \
-		-L$(HOST_DIR)
 
 LDFLAGS += -Wl,-rpath,$(HOST_DIR)
 
@@ -56,6 +55,20 @@ ifeq ($(BUILD),release)
 CXXFLAGS += -O2
 endif
 
+ifeq ($(LOCAL),local)
+INCS += -I../nanogui_mod/include \
+		-I../nanogui_mod/ext/nanovg \
+		-I../nanogui_mod/ext/nanovg/src \
+		-I../LIB-remote/src \
+		-I../LIB-funcMod/src
+
+LIBDIR += -L../nanogui_mod/build \
+		  -L../LIB-remote/build \
+		  -L../LIB-funcMod/build
+
+CXXFLAGS += -DDEBUG -O0 -g
+endif
+
 .PHONY: all clean $(NAME)-linter debug release prepare-build
 
 all: $(TARGET)
@@ -66,9 +79,11 @@ debug:
 release:
 	$(MAKE) BUILD=release all
 
+local:
+	$(MAKE) LOCAL=local all
+
 $(NAME): $(TARGET)
 	@echo "Built $(TARGET)"
-
 
 prepare-build: $(COMPILER_STAMP)
 
