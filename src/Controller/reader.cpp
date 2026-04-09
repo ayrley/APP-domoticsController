@@ -1,23 +1,21 @@
 #include <cerrno>
-#include <fstream>
 #include <iostream>
 #include <string>
 #include <thread>
 #include <vector>
 
 #include <errno.h>
-#include <fcntl.h>
 #include <stdint.h>
-#include <unistd.h>
-
-#include <system/File.hpp>
 
 #include "action.h"
 #include "badge.h"
 #include "debug.h"
 #include "eventLog.h"
 #include "reader.h"
-#include "remoteBadgeChannel.h"
+
+#include "Readers/networkReaderBackend.h"
+#include "Readers/osdpReaderBackend.h"
+#include "Readers/wiegandReaderBackend.h"
 
 Reader::Reader()
 {
@@ -25,8 +23,6 @@ Reader::Reader()
     this->m_grantedAction = nullptr;
     this->m_deniedAction = nullptr;
     this->m_ledDuration = 3000;
-    this->m_keypadBytes = 0;
-    memset(this->m_keypad, 0, sizeof(this->m_keypad));
 }
 
 Reader::Reader(std::vector<Badge *> *badges)
@@ -35,8 +31,6 @@ Reader::Reader(std::vector<Badge *> *badges)
     this->m_grantedAction = nullptr;
     this->m_deniedAction = nullptr;
     this->m_ledDuration = 3000;
-    this->m_keypadBytes = 0;
-    memset(this->m_keypad, 0, sizeof(this->m_keypad));
 }
 
 Reader::~Reader()
@@ -62,229 +56,90 @@ void Reader::reportError(const std::string &message)
 
 void Reader::start()
 {
+    this->init_reader();
     this->m_runner = std::thread(&Reader::handle, this);
     this->m_runner.detach();
 }
 
-int Reader::plainTextCode(const char *binaryCardString, uint64_t *cardNumber,
-                          int length)
+int Reader::init_reader()
 {
-    int i;
-    uint64_t bit;
-    uint64_t newCardNumber = 0;
-    int offset = 0;
-    uint64_t swappedCardNumber = 0;
-
-    if (length > 64)
-        offset = length - 64 - 1;
-
-    for (i = offset; i < length; i++) {
-        bit = ((binaryCardString[i] == '0') ||
-               (binaryCardString[i] && 0x01 == 0))
-                  ? 0x00
-                  : 0x01;
-        newCardNumber = newCardNumber << 1;
-        newCardNumber = newCardNumber & 0xfffffffffffffffe;
-        newCardNumber |= (bit & 0x01);
+    if (this->m_readerLocationType == RDR_LOC_IP) {
+        this->m_backend = std::make_unique<NetworkReaderBackend>(
+            this->m_readerName,
+            this->m_readerLocation);
+        return 0;
     }
 
-    swappedCardNumber = newCardNumber;
-    if (*cardNumber != swappedCardNumber && swappedCardNumber != 0)
-        *cardNumber = swappedCardNumber;
-
-    return 0;
-}
-
-int Reader::getKeypad(uint64_t *cardNumber, int count)
-{
-    char tmpKeypad[2] = {0};
-
-    /* only keep last nibble for getting a number */
-    if (this->m_keypadBytes >= 10) {
-        *cardNumber = atoi(this->m_keypad);
-    } else if (count <= 8) {
-        tmpKeypad[0] = (*cardNumber & 0x0f) + 48;
-
-        if (((*cardNumber) & 0x0f) > 9) {
-            *cardNumber = atoi(this->m_keypad);
-            this->m_keypadBytes = 0;
-            memset(this->m_keypad, 0, 12);
-        } else {
-            *cardNumber = 0;
-            strncat(this->m_keypad, tmpKeypad, 1);
-            this->m_keypadBytes++;
-        }
-    }
-
-    return 0;
-}
-
-int Reader::getWiegandBadge(uint64_t *badge)
-{
-    std::string wiegandString;
-    std::string buffer;
-    int f_count, f_wiegand;
-    int count;
-    int readVal;
-    uint64_t cardNumber = 0;
-
-    std::string devicePath = "/dev/" + this->m_readerLocation;
-    std::string countPath = "/sys/class/idtech/" + this->m_readerLocation +
-                            "/device/count";
-
-
-    if (!File::exists(countPath)) {
-        DBG("Wiegand reader count path does not exist: " + countPath);
-        *badge = 0;
+    if (this->m_readerLocationType != RDR_LOC_LOCAL) {
+        this->reportError("Unknown reader location type");
         return -EINVAL;
     }
 
-    if (!File::exists(devicePath)) {
-        DBG("Wiegand reader device path does not exist: " + devicePath);
-        *badge = 0;
-        return -EINVAL;
+    if (this->m_readerType == RDR_WIEGAND) {
+        this->m_backend = std::make_unique<WiegandReaderBackend>(
+            this->m_readerLocation,
+            this->m_ledDuration);
+        return 0;
     }
 
-    File::catFile(countPath, buffer);
-    count = stol(buffer);
+    if (this->m_readerType == RDR_OSDP) {
+        this->m_backend = std::make_unique<OsdpReaderBackend>();
+        return 0;
+    }
 
-    File::catFile(devicePath, wiegandString);
-    readVal = wiegandString.size();
-
-    if (readVal < 0)
-        return -EINVAL;
-
-    this->plainTextCode(wiegandString.c_str(), &cardNumber, count);
-    this->getKeypad(&cardNumber, count);
-    *badge = cardNumber;
-
-    return 0;
+    this->reportError("Unknown reader type");
+    return -EINVAL;
 }
 
-
-void Reader::setWiegandLed(enum ledColor color)
+int Reader::init_reader(readerType type)
 {
-    std::string buffer;
-    std::string ledPath = "/sys/class/idtech/" + this->m_readerLocation +
-                          "/device/color";
-
-    File::writeFile(ledPath, std::to_string(color));
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(this->m_ledDuration));
-
-    File::writeFile(ledPath, "0");
+    this->m_readerType = type;
+    return this->init_reader();
 }
 
-void Reader::handleWiegandReader()
+ReaderDecision Reader::onBadgeRead(uint64_t badge)
 {
-    uint64_t badge = 0;
-    bool validBadge = false;
+    ReaderDecision decision;
+    Action *actionToExecute = this->m_deniedAction;
 
-    enum ledColor color = LED_NONE;
-
-    std::thread ledRunner;
-
-    while (true) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        if (this->getWiegandBadge(&badge))
-            continue;
-
-        if (!badge)
-            continue;
-
+    if (this->m_badges != nullptr) {
         for (auto singleBadge : *this->m_badges) {
-            validBadge = singleBadge->valid(badge);
-            if (validBadge) {
-                color = LED_GREEN;
-                continue;
-            } else {
-                color = LED_RED;
+            if (singleBadge && singleBadge->valid(badge)) {
+                decision.granted = true;
+                actionToExecute = this->m_grantedAction;
+                break;
             }
         }
-        if (validBadge)
-            this->m_grantedAction->execute();
-        else
-            this->m_deniedAction->execute();
-
-        EventLog::addBadgeRead(this->m_readerName, badge, validBadge);
-
-        ledRunner = std::thread(&Reader::setWiegandLed, this, color);
-        ledRunner.detach();
+    } else {
+        DBG("No badges loaded; access denied");
     }
-}
 
-void Reader::handleOsdpReader()
-{
-}
+    if (!decision.granted)
+        actionToExecute = this->m_deniedAction;
 
-void Reader::handleNetworkReader()
-{
-    RemoteBadgeChannel channel(this->m_readerLocation);
-    LOG("Network reader '" << this->m_readerName << "' is starting on " << this->m_readerLocation);
+    if (actionToExecute) {
+        actionToExecute->execute();
 
-    bool started = channel.serve([this](uint64_t badge) {
-        RemoteBadgeReply reply;
-
-        bool validBadge = false;
-        Action *actionToExecute = this->m_deniedAction;
-
-        if (this->m_badges != nullptr) {
-            for (auto singleBadge : *this->m_badges) {
-                if (singleBadge && singleBadge->valid(badge)) {
-                    validBadge = true;
-                    actionToExecute = this->m_grantedAction;
-                    break;
-                }
-            }
-        } else {
-            DBG("No badges loaded; access denied");
+        json actionJson = actionToExecute->getJson();
+        if (actionJson.contains("outputs")) {
+            decision.actionOutputs = actionJson["outputs"];
         }
-
-        if (!validBadge) {
-            actionToExecute = this->m_deniedAction;
-        }
-
-        if (actionToExecute) {
-            actionToExecute->execute();
-        }
-
-        EventLog::addBadgeRead(this->m_readerName, badge, validBadge);
-
-        reply.valid = validBadge;
-        reply.badge = badge;
-        reply.action = json::array();
-        reply.validPayload = true;
-
-        if (actionToExecute) {
-            json actionJson = actionToExecute->getJson();
-            if (actionJson.contains("outputs")) {
-                reply.action = actionJson["outputs"];
-            }
-        }
-
-        return reply;
-    });
-
-    if (!started) {
-        reportError("Network reader '" + this->m_readerName + "' failed to start on " + this->m_readerLocation);
     }
-}
 
-void Reader::handleLocalReader()
-{
-    if (this->m_readerType == RDR_WIEGAND)
-        this->handleWiegandReader();
-    else if (this->m_readerType == RDR_OSDP)
-        this->handleOsdpReader();
+    EventLog::addBadgeRead(this->m_readerName, badge, decision.granted);
+
+    return decision;
 }
 
 void Reader::handle()
 {
     try {
-        if (this->m_readerLocationType == RDR_LOC_LOCAL)
-            this->handleLocalReader();
-        else if (this->m_readerLocationType == RDR_LOC_IP)
-            this->handleNetworkReader();
+        if (this->m_backend == nullptr && this->init_reader() != 0)
+            return;
+
+        this->m_backend->run(
+            [this](uint64_t badge) { return this->onBadgeRead(badge); },
+            [this](const std::string &message) { this->reportError(message); });
     } catch (const std::exception &e) {
         reportError(e.what());
     }
