@@ -2,12 +2,24 @@
 #define __BADGE_H_
 
 #include <string>
+#include <vector>
 
 #include <stdint.h>
 
 #include "json.hpp"
 
 using json = nlohmann::json;
+
+struct BadgeTimeWindow {
+    int startMinutes = -1;
+    int endMinutes = -1;
+};
+
+struct BadgeRule {
+    std::vector<std::string> zones;
+    std::vector<int> daysOfWeek;
+    std::vector<BadgeTimeWindow> timeWindows;
+};
 
 class Badge
 {
@@ -20,6 +32,7 @@ private:
     std::string m_lastName;
 
     uint64_t m_badgeNumber;
+    std::vector<BadgeRule> m_rules;
 
     int parse();
 

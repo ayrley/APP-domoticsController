@@ -52,6 +52,17 @@ bool containsWeekday(const json &daysOfWeek, int weekday)
     return false;
 }
 
+bool containsWeekday(const std::vector<int> &daysOfWeek, int weekday)
+{
+    for (int day : daysOfWeek) {
+        if (day == weekday) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool containsZone(const json &zones, const std::string &zoneName)
 {
     if (zoneName.empty() || !zones.is_array()) {
@@ -66,7 +77,22 @@ bool containsZone(const json &zones, const std::string &zoneName)
 
     return false;
 }
+
+bool containsZone(const std::vector<std::string> &zones, const std::string &zoneName)
+{
+    if (zoneName.empty()) {
+        return false;
+    }
+
+    for (const auto &zone : zones) {
+        if (zone == zoneName) {
+            return true;
+        }
+    }
+
+    return false;
 }
+} // namespace
 
 Badge::Badge(const std::string &badgeFile)
 {
@@ -123,6 +149,50 @@ int Badge::parse()
         DBG("badgeNumber could not be found in " + this->m_badgeFile);
     }
 
+    this->m_rules.clear();
+    if (this->m_badge.contains("rules") && this->m_badge["rules"].is_array()) {
+        for (const auto &ruleJson : this->m_badge["rules"]) {
+            if (!ruleJson.is_object()) {
+                continue;
+            }
+
+            BadgeRule rule;
+
+            if (ruleJson.contains("zones") && ruleJson["zones"].is_array()) {
+                for (const auto &zone : ruleJson["zones"]) {
+                    if (zone.is_string()) {
+                        rule.zones.push_back(zone.get<std::string>());
+                    }
+                }
+            }
+
+            if (ruleJson.contains("days_of_week") && ruleJson["days_of_week"].is_array()) {
+                for (const auto &day : ruleJson["days_of_week"]) {
+                    if (day.is_number_integer()) {
+                        rule.daysOfWeek.push_back(day.get<int>());
+                    }
+                }
+            }
+
+            if (ruleJson.contains("time_windows") && ruleJson["time_windows"].is_array()) {
+                for (const auto &timeWindowJson : ruleJson["time_windows"]) {
+                    if (!timeWindowJson.is_object() || !timeWindowJson.contains("start") ||
+                        !timeWindowJson.contains("end") || !timeWindowJson["start"].is_string() ||
+                        !timeWindowJson["end"].is_string()) {
+                        continue;
+                    }
+
+                    BadgeTimeWindow timeWindow;
+                    timeWindow.startMinutes = parseMinutesOfDay(timeWindowJson["start"]);
+                    timeWindow.endMinutes = parseMinutesOfDay(timeWindowJson["end"]);
+                    rule.timeWindows.push_back(timeWindow);
+                }
+            }
+
+            this->m_rules.push_back(rule);
+        }
+    }
+
     return 0;
 }
 
@@ -135,12 +205,12 @@ bool Badge::valid(uint64_t badgeToCheck, const std::string &zoneName, std::strin
         return false;
     }
 
-    if (!this->m_badge.contains("rules") || !this->m_badge["rules"].is_array() || this->m_badge["rules"].empty()) {
+    if (this->m_rules.empty()) {
         return true;
     }
 
     const std::time_t now = std::time(nullptr);
-    std::tm localTime {};
+    std::tm localTime{};
     localtime_r(&now, &localTime);
 
     const int weekday = localTime.tm_wday == 0 ? 7 : localTime.tm_wday;
@@ -149,33 +219,22 @@ bool Badge::valid(uint64_t badgeToCheck, const std::string &zoneName, std::strin
     bool weekdayMismatch = false;
     bool timeMismatch = false;
 
-    for (const auto &rule : this->m_badge["rules"]) {
-        if (!rule.is_object()) {
-            continue;
-        }
-
-        if (rule.contains("zones") && !containsZone(rule["zones"], zoneName)) {
+    for (const auto &rule : this->m_rules) {
+        if (!rule.zones.empty() && !containsZone(rule.zones, zoneName)) {
             zoneMismatch = true;
             continue;
         }
 
-        if (rule.contains("days_of_week") && !containsWeekday(rule["days_of_week"], weekday)) {
+        if (!rule.daysOfWeek.empty() && !containsWeekday(rule.daysOfWeek, weekday)) {
             weekdayMismatch = true;
             continue;
         }
 
-        if (rule.contains("time_windows") && rule["time_windows"].is_array()) {
+        if (!rule.timeWindows.empty()) {
             bool matchesTimeWindow = false;
 
-            for (const auto &timeWindow : rule["time_windows"]) {
-                if (!timeWindow.is_object() || !timeWindow.contains("start") || !timeWindow.contains("end") ||
-                    !timeWindow["start"].is_string() || !timeWindow["end"].is_string()) {
-                    continue;
-                }
-
-                const int startMinutes = parseMinutesOfDay(timeWindow["start"]);
-                const int endMinutes = parseMinutesOfDay(timeWindow["end"]);
-                if (timeInWindow(currentMinutes, startMinutes, endMinutes)) {
+            for (const auto &timeWindow : rule.timeWindows) {
+                if (timeInWindow(currentMinutes, timeWindow.startMinutes, timeWindow.endMinutes)) {
                     matchesTimeWindow = true;
                     break;
                 }
