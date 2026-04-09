@@ -13,6 +13,7 @@ COMPILER_STAMP := $(BUILD_DIR)/.compiler
 
 SRCS	:= 	$(wildcard src/*.cpp) \
 			$(wildcard src/Controller/*.cpp) \
+			$(wildcard src/Controller/Readers/*.cpp) \
 			$(wildcard src/Peripherals/*.cpp) \
 			$(wildcard src/GUI/*.cpp) \
 			$(wildcard src/GUI/Buttons/*.cpp) \

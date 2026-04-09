@@ -7,7 +7,6 @@
 #include <stdint.h>
 
 #include "network.h"
-#include "reader.h"
 
 Network::Network()
 {

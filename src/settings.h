@@ -10,7 +10,7 @@
 #include "json.hpp"
 
 #include "network.h"
-#include "reader.h"
+#include "accessController.h"
 
 using json = nlohmann::json;
 
@@ -38,7 +38,7 @@ private:
 
     Network *m_network;
 
-    std::vector<Reader *> *m_readers;
+    std::vector<AccessController *> *m_accessControllers;
     std::vector<Action *> *m_actions;
 
 public:
@@ -56,7 +56,7 @@ public:
     int version();
 
     Network *getNetwork();
-    std::vector<Reader *> *getReaders();
+    std::vector<AccessController *> *getAccessControllers();
     std::vector<Action *> *getActions();
 
     enum settingsType getType();

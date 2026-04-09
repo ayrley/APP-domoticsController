@@ -15,7 +15,7 @@
 
 Settings::Settings()
 {
-    this->m_readers = new std::vector<Reader *>();
+    this->m_accessControllers = new std::vector<AccessController *>();
     this->m_actions = new std::vector<Action *>();
     this->m_settingsFile = "/etc/factory.settings.domotics";
     this->m_network = new Network();
@@ -24,7 +24,7 @@ Settings::Settings()
 
 Settings::Settings(std::string settingsFile)
 {
-    this->m_readers = new std::vector<Reader *>();
+    this->m_accessControllers = new std::vector<AccessController *>();
     this->m_actions = new std::vector<Action *>();
     this->m_settingsFile = settingsFile;
     this->m_network = new Network();
@@ -66,9 +66,9 @@ int Settings::parseSettingsType()
 int Settings::parseReaders()
 {
     for (auto &sinlgeReader : this->m_settings["readers"].items()) {
-        Reader *rdr = new Reader();
-        rdr->fromJson(sinlgeReader.value());
-        this->m_readers->push_back(rdr);
+        AccessController *accessCtlr = new AccessController();
+        accessCtlr->fromJson(sinlgeReader.value());
+        this->m_accessControllers->push_back(accessCtlr);
     }
 
     return 0;
@@ -141,8 +141,8 @@ int Settings::write()
                                                           this->m_network->getJson()));
 
     this->m_settings["readers"] = json::array();
-    for (Reader *reader : *this->m_readers) {
-        this->m_settings["readers"].push_back(reader->getJson());
+    for (AccessController *accessCtlr : *this->m_accessControllers) {
+        this->m_settings["readers"].push_back(accessCtlr->getJson());
     }
 
     this->m_settings["actions"] = json::array();
@@ -206,9 +206,9 @@ Network *Settings::getNetwork()
     return this->m_network;
 }
 
-std::vector<Reader *> *Settings::getReaders()
+std::vector<AccessController *> *Settings::getAccessControllers()
 {
-    return this->m_readers;
+    return this->m_accessControllers;
 }
 
 std::vector<Action *> *Settings::getActions()

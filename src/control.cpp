@@ -22,7 +22,7 @@
 #include "io.h"
 #include "lifeLed.h"
 #include "proximity.h"
-#include "reader.h"
+#include "accessController.h"
 #include "screen.h"
 #include "settings.h"
 #include "statusLeds.h"
@@ -44,12 +44,12 @@ namespace
 {
 bool hasNetworkReadersConfigured()
 {
-    if (g_userSettings == nullptr || g_userSettings->getReaders() == nullptr) {
+    if (g_userSettings == nullptr || g_userSettings->getAccessControllers() == nullptr) {
         return false;
     }
 
-    for (Reader *reader : *g_userSettings->getReaders()) {
-        if (reader != nullptr && reader->getLocationType() == RDR_LOC_IP) {
+    for (AccessController *accessCtlr : *g_userSettings->getAccessControllers()) {
+        if (accessCtlr != nullptr && accessCtlr->getLocationType() == RDR_LOC_IP) {
             return true;
         }
     }
@@ -174,15 +174,15 @@ int startReaders(StatusLeds &statusLeds)
 {
     int ret = 0;
 
-    for (auto singleReader : *g_userSettings->getReaders()) {
-        singleReader->setBadges(g_badges);
-        singleReader->setErrorHandler([&statusLeds](readerLocationType locationType, const std::string &message) {
+    for (auto singleAccessController : *g_userSettings->getAccessControllers()) {
+        singleAccessController->setBadges(g_badges);
+        singleAccessController->setErrorHandler([&statusLeds](readerLocationType locationType, const std::string &message) {
             ERR("Reader failure: " << message);
             statusLeds.showError(locationType == RDR_LOC_IP
                                      ? StatusLeds::ERROR_NETWORK
                                      : StatusLeds::ERROR_READER);
         });
-        singleReader->start();
+        singleAccessController->start();
     }
 
     return ret;
