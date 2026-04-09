@@ -17,6 +17,9 @@
 
 using json = nlohmann::json;
 
+// Forward declaration
+class AccessZone;
+
 enum readerIOputType {
     RDR_IN_OUT = 0,
     RDR_IN,
@@ -40,6 +43,8 @@ private:
     readerProtocol m_readerProtocol;
     readerIOputType m_readerIOputType;
 
+    AccessZone *m_zone;
+
     std::thread m_runner;
     std::unique_ptr<ReaderBackend> m_backend;
     std::function<void(readerLocationType, const std::string &)> m_errorHandler;
@@ -60,6 +65,7 @@ public:
     void start();
     void setBadges(std::vector<Badge *> *badges);
     void setErrorHandler(const std::function<void(readerLocationType, const std::string &)> &handler);
+    void setZone(AccessZone *zone) { this->m_zone = zone; }
     void fromJson(const json &jsonObject);
 
     json getJson();
@@ -72,6 +78,8 @@ public:
     readerProtocol getProtocol() { return this->m_readerProtocol; }
 
     readerIOputType getIOputType() { return this->m_readerIOputType; }
+    
+    AccessZone *getZone() { return this->m_zone; }
 };
 
 #endif

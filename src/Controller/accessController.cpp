@@ -8,6 +8,7 @@
 #include "debug.h"
 #include "eventLog.h"
 #include "accessController.h"
+#include "accessZone.h"
 
 #include "Readers/networkReaderBackend.h"
 #include "Readers/osdpReaderBackend.h"
@@ -18,6 +19,7 @@ AccessController::AccessController()
     this->m_badges = nullptr;
     this->m_grantedAction = nullptr;
     this->m_deniedAction = nullptr;
+    this->m_zone = nullptr;
     this->m_ledDuration = 3000;
 }
 
@@ -26,6 +28,7 @@ AccessController::AccessController(std::vector<Badge *> *badges)
     this->m_badges = badges;
     this->m_grantedAction = nullptr;
     this->m_deniedAction = nullptr;
+    this->m_zone = nullptr;
     this->m_ledDuration = 3000;
 }
 
@@ -110,6 +113,19 @@ ReaderDecision AccessController::onBadgeRead(uint64_t badge)
         }
     } else {
         DBG("No badges loaded; access denied");
+    }
+
+    if (decision.granted && this->m_zone != nullptr && this->m_zone->isAntipassbackEnabled()) {
+        if (this->m_readerIOputType == RDR_IN || this->m_readerIOputType == RDR_IN_OUT) {
+            this->m_zone->recordEntry(badge, this->m_readerIOputType);
+        } else if (this->m_readerIOputType == RDR_OUT) {
+            if (!this->m_zone->validateAndRecordExit(badge, this->m_readerIOputType)) {
+                decision.antipassbackViolation = true;
+                decision.granted = false;
+                actionToExecute = this->m_deniedAction;
+                DBG("Antipassback violation: badge " + std::to_string(badge) + " trying to exit without entry");
+            }
+        }
     }
 
     if (!decision.granted)

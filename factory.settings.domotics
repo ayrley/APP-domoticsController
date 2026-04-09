@@ -1,102 +1,109 @@
 {
-    "type": "FACTORY",
-    "version": 1,
-    "network": {
-        "dhcp": false,
-        "dns1": "",
-        "dns2": "",
-        "gateway": "192.168.1.1",
-        "ipAddress": "192.168.1.100",
-        "netmask": "255.255.255.0"
-    },
-    "readers" : [
-    	{
-    		"name": "wiegand",
-    		"location" : "/dev/idtreader_1",
-    		"location_type": "LOCAL",
-    		"protocol" : "WIEGAND",
-    		"granted" : {
-				"name" : "AccessGranted",
-				"outputs" : [
-					{
-						"output_type" : "gpio",
-						"output" : "out_green",
-						"duration": 1000
-					}
-    			]
-			},
-    		"denied" : {
-				"name" : "AccessDenied",
-				"outputs" : [
-					{
-						"output_type" : "gpio",
-						"output" : "out_red",
-						"duration": 1000
-					}
-    			]
-			}
-    	},
-		{
-            "name": "net-reader-1",
-            "location": "0.0.0.0:9000",
-            "location_type": "IP",
-            "protocol": "WIEGAND",
-            "granted": {
-                "name": "AccessGranted",
-                "outputs": [
-					{
-						"output_type" : "gpio",
-						"output" : "out_green",
-						"duration": 1000
-					}
-				]
-            },
-            "denied": {
-                "name": "AccessDenied",
-                "outputs": [
-					{
-						"output_type" : "gpio",
-						"output" : "out_red",
-						"duration": 1000
-					}
-				]
-            }
-        }
-
-    ],
-    "actions" : [
-    	{
-    		"name" : "Bel",
-    		"input_type" : "gpio",
-    		"input" : "in_bel",
-    		"outputs" : [
-				{
-					"output_type" : "gpio",
-					"output" : "out_bel",
-					"duration": 1000
-				}
-    		]
-    	},
-		{
-            "input_type": "TIME",
-            "name": "Oprit_aan",
-            "cron": "0 19 * * *",
+  "type": "FACTORY",
+  "version": 1,
+  "network": {
+    "dhcp": false,
+    "dns1": "",
+    "dns2": "",
+    "gateway": "192.168.1.1",
+    "ipAddress": "192.168.1.100",
+    "netmask": "255.255.255.0"
+  },
+  "zones": [
+    {
+      "name": "house",
+      "antipassback": true,
+      "readers": [
+        {
+          "name": "wiegand",
+          "location": "/dev/idtreader_1",
+          "location_type": "LOCAL",
+          "protocol": "WIEGAND",
+		  "type" : "IN",
+          "granted": {
+            "name": "AccessGranted",
             "outputs": [
-                {
-                    "output": "oprit_lampjes"
-                }
+              {
+                "output_type": "gpio",
+                "output": "out_green",
+                "duration": 1000
+              }
             ]
+          },
+          "denied": {
+            "name": "AccessDenied",
+            "outputs": [
+              {
+                "output_type": "gpio",
+                "output": "out_red",
+                "duration": 1000
+              }
+            ]
+          }
         },
         {
-            "input_type": "TIME",
-            "name": "Oprit_uit",
-            "cron": "0 23 * * *",
+          "name": "net-reader-1",
+          "location": "0.0.0.0:9000",
+          "location_type": "IP",
+          "protocol": "WIEGAND",
+			"type" : "OUT",
+          "granted": {
+            "name": "AccessGranted",
             "outputs": [
-                {
-                    "inverted" : true,
-                    "output": "oprit_lampjes"
-                }
+              {
+                "output_type": "gpio",
+                "output": "out_green",
+                "duration": 1000
+              }
             ]
+          },
+          "denied": {
+            "name": "AccessDenied",
+            "outputs": [
+              {
+                "output_type": "gpio",
+                "output": "out_red",
+                "duration": 1000
+              }
+            ]
+          }
         }
-    ]
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "Bel",
+      "input_type": "gpio",
+      "input": "in_bel",
+      "outputs": [
+        {
+          "output_type": "gpio",
+          "output": "out_bel",
+          "duration": 1000
+        }
+      ]
+    },
+    {
+      "input_type": "TIME",
+      "name": "Oprit_aan",
+      "cron": "0 19 * * *",
+      "outputs": [
+        {
+          "output": "oprit_lampjes"
+        }
+      ]
+    },
+    {
+      "input_type": "TIME",
+      "name": "Oprit_uit",
+      "cron": "0 23 * * *",
+      "outputs": [
+        {
+          "inverted": true,
+          "output": "oprit_lampjes"
+        }
+      ]
+    }
+  ]
 }

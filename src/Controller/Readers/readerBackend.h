@@ -11,6 +11,7 @@ using json = nlohmann::json;
 
 struct ReaderDecision {
     bool granted = false;
+    bool antipassbackViolation = false;
     json actionOutputs = json::array();
     std::string firstName;
     std::string lastName;
