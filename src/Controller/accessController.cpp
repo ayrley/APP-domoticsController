@@ -7,13 +7,13 @@
 #include "badge.h"
 #include "debug.h"
 #include "eventLog.h"
-#include "reader.h"
+#include "accessController.h"
 
 #include "Readers/networkReaderBackend.h"
 #include "Readers/osdpReaderBackend.h"
 #include "Readers/wiegandReaderBackend.h"
 
-Reader::Reader()
+AccessController::AccessController()
 {
     this->m_badges = nullptr;
     this->m_grantedAction = nullptr;
@@ -21,7 +21,7 @@ Reader::Reader()
     this->m_ledDuration = 3000;
 }
 
-Reader::Reader(std::vector<Badge *> *badges)
+AccessController::AccessController(std::vector<Badge *> *badges)
 {
     this->m_badges = badges;
     this->m_grantedAction = nullptr;
@@ -29,35 +29,35 @@ Reader::Reader(std::vector<Badge *> *badges)
     this->m_ledDuration = 3000;
 }
 
-Reader::~Reader()
+AccessController::~AccessController()
 {
 }
 
-void Reader::setBadges(std::vector<Badge *> *badges)
+void AccessController::setBadges(std::vector<Badge *> *badges)
 {
     this->m_badges = badges;
 }
 
-void Reader::setErrorHandler(const std::function<void(readerLocationType, const std::string &)> &handler)
+void AccessController::setErrorHandler(const std::function<void(readerLocationType, const std::string &)> &handler)
 {
     this->m_errorHandler = handler;
 }
 
-void Reader::reportError(const std::string &message)
+void AccessController::reportError(const std::string &message)
 {
     if (this->m_errorHandler) {
         this->m_errorHandler(this->m_readerLocationType, message);
     }
 }
 
-void Reader::start()
+void AccessController::start()
 {
     this->init_reader();
-    this->m_runner = std::thread(&Reader::handle, this);
+    this->m_runner = std::thread(&AccessController::handle, this);
     this->m_runner.detach();
 }
 
-int Reader::init_reader()
+int AccessController::init_reader()
 {
     if (this->m_readerLocationType == RDR_LOC_IP) {
         this->m_backend = std::make_unique<NetworkReaderBackend>(
@@ -87,13 +87,13 @@ int Reader::init_reader()
     return -EINVAL;
 }
 
-int Reader::init_reader(readerType type)
+int AccessController::init_reader(readerType type)
 {
     this->m_readerType = type;
     return this->init_reader();
 }
 
-ReaderDecision Reader::onBadgeRead(uint64_t badge)
+ReaderDecision AccessController::onBadgeRead(uint64_t badge)
 {
     ReaderDecision decision;
     Action *actionToExecute = this->m_deniedAction;
@@ -131,7 +131,7 @@ ReaderDecision Reader::onBadgeRead(uint64_t badge)
     return decision;
 }
 
-void Reader::handle()
+void AccessController::handle()
 {
     try {
         if (this->m_backend == nullptr && this->init_reader() != 0)
@@ -145,7 +145,7 @@ void Reader::handle()
     }
 }
 
-json Reader::getJson()
+json AccessController::getJson()
 {
     json object = {};
     object += json::object_t::value_type("name", this->m_readerName);
@@ -162,7 +162,7 @@ json Reader::getJson()
     return object;
 }
 
-void Reader::fromJson(const json &jsonObject)
+void AccessController::fromJson(const json &jsonObject)
 {
     std::string tmpHelp;
 

@@ -17,7 +17,7 @@
 
 using json = nlohmann::json;
 
-class Reader
+class AccessController
 {
 private:
     std::string m_readerName;
@@ -42,9 +42,9 @@ private:
     ReaderDecision onBadgeRead(uint64_t badge);
 
 public:
-    Reader();
-    Reader(std::vector<Badge *> *badges);
-    ~Reader();
+    AccessController();
+    AccessController(std::vector<Badge *> *badges);
+    ~AccessController();
 
     int init_reader();
     int init_reader(readerType type);
