@@ -18,6 +18,10 @@ extern std::vector<IO *> *g_ios;
 
 Action::Action()
 {
+    this->m_inputType = IN_GPIO;
+    this->m_cronValid = false;
+    this->m_cronExpressionText = "";
+    this->m_outputDefinitions = json::array();
 }
 
 bool Action::setRemoteGpio(IO &io, int value, int durationMs)
@@ -46,7 +50,12 @@ json Action::getJson()
     json object = {};
     object += json::object_t::value_type("name", this->m_name);
 
-    if (this->m_input.getName() != "") {
+    if (this->m_inputType == IN_TIME) {
+        object += json::object_t::value_type("input_type", "TIME");
+        if (!this->m_cronExpressionText.empty()) {
+            object += json::object_t::value_type("cron", this->m_cronExpressionText);
+        }
+    } else if (this->m_input.getName() != "") {
         object += json::object_t::value_type("input", this->m_input.getName());
         if (this->m_inputType == IN_IP) {
             object += json::object_t::value_type("input_type", "IP");
@@ -56,13 +65,28 @@ json Action::getJson()
     }
 
     json outputsJson = json::array();
-    for (auto &singleOutput : this->m_outputs) {
-        json outputJson = {};
-        outputJson += json::object_t::value_type("output", singleOutput.getIo()->getName());
-        if (singleOutput.getDuration() > 0) {
-            outputJson += json::object_t::value_type("duration", singleOutput.getDuration());
+    if (!this->m_outputDefinitions.empty()) {
+        outputsJson = this->m_outputDefinitions;
+    } else {
+        for (auto &singleOutput : this->m_outputs) {
+            json outputJson = {};
+            IO *outputIo = singleOutput.getIo();
+            if (outputIo == nullptr) {
+                continue;
+            }
+
+            outputJson += json::object_t::value_type("output", outputIo->getName());
+            outputJson += json::object_t::value_type(
+                "output_type",
+                outputIo->getLocationType() == IO_LOC_IP ? "ip" : "gpio");
+            if (singleOutput.getDuration() > 0) {
+                outputJson += json::object_t::value_type("duration", singleOutput.getDuration());
+            }
+            if (singleOutput.isInverted()) {
+                outputJson += json::object_t::value_type("inverted", true);
+            }
+            outputsJson.push_back(outputJson);
         }
-        outputsJson.push_back(outputJson);
     }
     object += json::object_t::value_type("outputs", outputsJson);
 
@@ -71,6 +95,12 @@ json Action::getJson()
 
 void Action::fromJson(const json &jsonObject)
 {
+    this->m_inputType = IN_GPIO;
+    this->m_cronValid = false;
+    this->m_cronExpressionText = "";
+    this->m_outputs.clear();
+    this->m_outputDefinitions = json::array();
+
     try {
         this->m_name = jsonObject["name"];
     } catch (const std::exception &e) {
@@ -100,7 +130,9 @@ void Action::fromJson(const json &jsonObject)
         if (jsonObject.contains("cron") && !jsonObject["cron"].is_null()) {
             try {
                 std::string cronExpr = jsonObject["cron"];
+                this->m_cronExpressionText = cronExpr;
                 this->m_cronExpression = cron::make_cron(cronExpr);
+                this->m_cronValid = true;
             } catch (const std::exception &e) {
                 ERR("Invalid cron expression in action '" << this->m_name << "': " << e.what());
             }
@@ -112,6 +144,8 @@ void Action::fromJson(const json &jsonObject)
     try {
         if (jsonObject.contains("outputs")) {
             for (auto &singleOutput : jsonObject["outputs"].items()) {
+                this->m_outputDefinitions.push_back(singleOutput.value());
+
                 for (IO *io : *g_ios) {
                     if (io->getName() == singleOutput.value()["output"]) {
                         ActionIo actionIo(io);
@@ -180,6 +214,11 @@ void Action::run()
 {
     while (1) {
         if (this->m_inputType == IN_TIME) {
+            if (!this->m_cronValid) {
+                ERR("Skipping invalid time-based action '" << this->m_name << "'");
+                return;
+            }
+
             auto now = std::chrono::system_clock::now();
             auto next = cron::cron_next(this->m_cronExpression, now);
             std::this_thread::sleep_until(next);
@@ -195,6 +234,11 @@ void Action::run()
 
 void Action::start()
 {
+    if (this->m_inputType == IN_TIME && !this->m_cronValid) {
+        ERR("Not starting action with invalid cron: '" << this->m_name << "'");
+        return;
+    }
+
     this->m_runner = std::thread(&Action::run, this);
     this->m_runner.detach();
 }

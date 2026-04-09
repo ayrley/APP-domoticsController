@@ -74,7 +74,6 @@ void reloadBadgesCache()
 
 int loadSettings()
 {
-    int ret = 0;
     std::stringstream userSettingsStream;
     std::stringstream factorySettingsStream;
     std::string userSettingsFile;
@@ -86,15 +85,51 @@ int loadSettings()
     factorySettingsStream << DIR_ETC << "factory.settings.domotics";
     factorySettingsStream >> factorySettingsFile;
 
+    if (!std::filesystem::exists(factorySettingsFile)) {
+        ERR("Factory settings file not found: " + factorySettingsFile);
+        return -ENOENT;
+    }
+
     Settings *factory = new Settings(factorySettingsFile);
+    if (factory->read() != 0) {
+        delete factory;
+        ERR("Failed to read factory settings: " + factorySettingsFile);
+        return -ENOENT;
+    }
     factory->parse();
 
     bool settingsExist = std::filesystem::exists(userSettingsFile);
 
-    if (!settingsExist)
-        std::filesystem::copy(factorySettingsFile, userSettingsFile);
+    if (!settingsExist) {
+        std::error_code ec;
+        const auto userSettingsParent = std::filesystem::path(userSettingsFile).parent_path();
+        if (!userSettingsParent.empty()) {
+            std::filesystem::create_directories(userSettingsParent, ec);
+            if (ec) {
+                delete factory;
+                ERR("Failed to create settings directory: " + ec.message());
+                return -ENOENT;
+            }
+        }
+
+        std::filesystem::copy_file(factorySettingsFile,
+                                   userSettingsFile,
+                                   std::filesystem::copy_options::overwrite_existing,
+                                   ec);
+        if (ec) {
+            delete factory;
+            ERR("Failed to create user settings from factory template: " + ec.message());
+            return -ENOENT;
+        }
+    }
 
     Settings *user = new Settings(userSettingsFile);
+    if (user->read() != 0) {
+        delete user;
+        delete factory;
+        ERR("Failed to read user settings: " + userSettingsFile);
+        return -ENOENT;
+    }
     user->parse();
 
     if (user->getType() != SET_USER) {
@@ -104,7 +139,7 @@ int loadSettings()
     g_userSettings = user;
     g_factorySettings = factory;
 
-    return ret;
+    return 0;
 }
 
 int loadBadges()
@@ -347,7 +382,9 @@ int main(void)
     }
 
     try {
-        loadSettings();
+        if (loadSettings() != 0) {
+            throw std::runtime_error("Unable to load settings");
+        }
         LOG("Settings loaded");
     } catch (const std::exception &e) {
         ERR("Settings startup failed: " << e.what());

@@ -19,7 +19,7 @@
           "location": "/dev/idtreader_1",
           "location_type": "LOCAL",
           "protocol": "WIEGAND",
-		  "type" : "IN",
+          "type": "IN",
           "granted": {
             "name": "AccessGranted",
             "outputs": [
@@ -46,7 +46,7 @@
           "location": "0.0.0.0:9000",
           "location_type": "IP",
           "protocol": "WIEGAND",
-			"type" : "OUT",
+          "type": "OUT",
           "granted": {
             "name": "AccessGranted",
             "outputs": [
@@ -87,7 +87,7 @@
     {
       "input_type": "TIME",
       "name": "Oprit_aan",
-      "cron": "0 19 * * *",
+      "cron": "0 0 19 * * *",
       "outputs": [
         {
           "output": "oprit_lampjes"
@@ -97,7 +97,7 @@
     {
       "input_type": "TIME",
       "name": "Oprit_uit",
-      "cron": "0 23 * * *",
+      "cron": "0 0 23 * * *",
       "outputs": [
         {
           "inverted": true,

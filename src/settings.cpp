@@ -15,22 +15,24 @@
 
 Settings::Settings()
 {
+    this->settingsType = SET_NONE;
+    this->m_settings = json::object();
     this->m_zones = new std::vector<AccessZone *>();
     this->m_accessControllers = new std::vector<AccessController *>();
     this->m_actions = new std::vector<Action *>();
     this->m_settingsFile = "/etc/factory.settings.domotics";
     this->m_network = new Network();
-    this->read();
 }
 
 Settings::Settings(std::string settingsFile)
 {
+    this->settingsType = SET_NONE;
+    this->m_settings = json::object();
     this->m_zones = new std::vector<AccessZone *>();
     this->m_accessControllers = new std::vector<AccessController *>();
     this->m_actions = new std::vector<Action *>();
     this->m_settingsFile = settingsFile;
     this->m_network = new Network();
-    this->read();
 }
 
 Settings::~Settings()
@@ -43,7 +45,9 @@ Settings::~Settings()
 
 void Settings::parse()
 {
-    m_network->fromJson(this->m_settings["network"]);
+    if (this->m_settings.contains("network") && this->m_settings["network"].is_object()) {
+        m_network->fromJson(this->m_settings["network"]);
+    }
 }
 
 int Settings::setSettingsFile(std::string settingsFile)
@@ -55,9 +59,11 @@ int Settings::setSettingsFile(std::string settingsFile)
 
 int Settings::parseSettingsType()
 {
-    if (this->m_settings["type"] == "FACTORY")
+    if (this->m_settings.contains("type") && this->m_settings["type"].is_string() &&
+        this->m_settings["type"] == "FACTORY")
         this->settingsType = SET_FACTORY;
-    else if (this->m_settings["type"] == "USER")
+    else if (this->m_settings.contains("type") && this->m_settings["type"].is_string() &&
+             this->m_settings["type"] == "USER")
         this->settingsType = SET_USER;
     else
         this->settingsType = SET_NONE;
@@ -67,9 +73,13 @@ int Settings::parseSettingsType()
 
 int Settings::parseReaders()
 {
-    for (auto &sinlgeReader : this->m_settings["readers"].items()) {
+    if (!this->m_settings.contains("readers") || !this->m_settings["readers"].is_array()) {
+        return 0;
+    }
+
+    for (const auto &singleReader : this->m_settings["readers"]) {
         AccessController *accessCtlr = new AccessController();
-        accessCtlr->fromJson(sinlgeReader.value());
+        accessCtlr->fromJson(singleReader);
         this->m_accessControllers->push_back(accessCtlr);
     }
 
@@ -98,9 +108,13 @@ int Settings::parseZones()
 
 int Settings::parseActions()
 {
-    for (auto &singleAction : this->m_settings["actions"].items()) {
+    if (!this->m_settings.contains("actions") || !this->m_settings["actions"].is_array()) {
+        return 0;
+    }
+
+    for (const auto &singleAction : this->m_settings["actions"]) {
         Action *action = new Action();
-        action->fromJson(singleAction.value());
+        action->fromJson(singleAction);
         this->m_actions->push_back(action);
     }
 
@@ -160,12 +174,18 @@ int Settings::write()
     this->setType(this->settingsType);
     this->m_settings["version"] = SETTINGS_VERSION;
 
-    this->m_settings.push_back(json::object_t::value_type("network",
-                                                          this->m_network->getJson()));
+    this->m_settings["network"] = this->m_network->getJson();
 
-    this->m_settings["readers"] = json::array();
-    for (AccessController *accessCtlr : *this->m_accessControllers) {
-        this->m_settings["readers"].push_back(accessCtlr->getJson());
+    if (this->m_zones != nullptr && !this->m_zones->empty()) {
+        this->m_settings["zones"] = json::array();
+        for (AccessZone *zone : *this->m_zones) {
+            this->m_settings["zones"].push_back(zone->getJson());
+        }
+    } else {
+        this->m_settings["readers"] = json::array();
+        for (AccessController *accessCtlr : *this->m_accessControllers) {
+            this->m_settings["readers"].push_back(accessCtlr->getJson());
+        }
     }
 
     this->m_settings["actions"] = json::array();

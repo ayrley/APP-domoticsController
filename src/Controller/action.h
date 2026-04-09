@@ -23,12 +23,15 @@ private:
     IO m_input;
 
     std::vector<ActionIo> m_outputs;
+    json m_outputDefinitions;
 
     std::string m_name;
+    std::string m_cronExpressionText;
 
     std::thread m_runner;
 
     cron::cronexpr m_cronExpression;
+    bool m_cronValid;
 
     enum InputType m_inputType;
 

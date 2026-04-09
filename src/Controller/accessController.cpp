@@ -168,6 +168,13 @@ json AccessController::getJson()
     object += json::object_t::value_type("location", this->m_readerLocation);
     object += json::object_t::value_type("location_type", this->m_readerLocationType == RDR_LOC_IP ? "IP" : "LOCAL");
     object += json::object_t::value_type("protocol", this->m_readerProtocol == RDR_OSDP ? "OSDP" : "WIEGAND");
+    if (this->m_readerIOputType == RDR_IN) {
+        object += json::object_t::value_type("type", "IN");
+    } else if (this->m_readerIOputType == RDR_OUT) {
+        object += json::object_t::value_type("type", "OUT");
+    } else {
+        object += json::object_t::value_type("type", "IN_OUT");
+    }
     if (this->m_grantedAction) {
         object += json::object_t::value_type("granted", this->m_grantedAction->getJson());
     }
