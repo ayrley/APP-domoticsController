@@ -1,5 +1,17 @@
 {
   "firstName": "Ayrton",
   "lastName": "Leyssens",
-  "badgeNumber": 12345
+  "badgeNumber": 12345,
+  "rules": [
+    {
+      "zones": ["house"],
+      "days_of_week": [1, 2, 3, 4, 5, 6, 7],
+      "time_windows": [
+        {
+          "start": "08:00",
+          "end": "18:00"
+        }
+      ]
+    }
+  ]
 }

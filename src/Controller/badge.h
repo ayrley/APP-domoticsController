@@ -32,7 +32,9 @@ public:
     std::string getFirstName();
     std::string getLastName();
 
-    bool valid(uint64_t badgeToCheck);
+    bool valid(uint64_t badgeToCheck,
+               const std::string &zoneName = "",
+               std::string *failureReason = nullptr);
 };
 
 #endif

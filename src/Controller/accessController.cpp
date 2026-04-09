@@ -100,16 +100,28 @@ ReaderDecision AccessController::onBadgeRead(uint64_t badge)
 {
     ReaderDecision decision;
     Action *actionToExecute = this->m_deniedAction;
+    const std::string zoneName = this->m_zone != nullptr ? this->m_zone->getName() : "";
 
     if (this->m_badges != nullptr) {
         for (auto singleBadge : *this->m_badges) {
-            if (singleBadge && singleBadge->valid(badge)) {
+            if (singleBadge == nullptr) {
+                continue;
+            }
+
+            if (singleBadge->getBadgeNumber() != badge) {
+                continue;
+            }
+
+            std::string failureReason;
+            if (singleBadge->valid(badge, zoneName, &failureReason)) {
                 decision.granted = true;
                 decision.firstName = singleBadge->getFirstName();
                 decision.lastName = singleBadge->getLastName();
                 actionToExecute = this->m_grantedAction;
                 break;
             }
+
+            DBG("Badge access denied for zone '" + zoneName + "': " + failureReason);
         }
     } else {
         DBG("No badges loaded; access denied");
