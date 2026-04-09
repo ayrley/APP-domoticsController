@@ -17,11 +17,18 @@
 
 using json = nlohmann::json;
 
+enum readerIOputType {
+    RDR_IN_OUT = 0,
+    RDR_IN,
+    RDR_OUT
+};
+
 class AccessController
 {
 private:
     std::string m_readerName;
     std::string m_readerLocation;
+
     int m_ledDuration;
 
     std::vector<Badge *> *m_badges;
@@ -30,7 +37,8 @@ private:
 
     readerLocationType m_readerLocationType;
 
-    readerType m_readerType;
+    readerProtocol m_readerProtocol;
+    readerIOputType m_readerIOputType;
 
     std::thread m_runner;
     std::unique_ptr<ReaderBackend> m_backend;
@@ -46,8 +54,8 @@ public:
     AccessController(std::vector<Badge *> *badges);
     ~AccessController();
 
-    int init_reader();
-    int init_reader(readerType type);
+    int initReader();
+    int initReader(readerProtocol protocol);
     
     void start();
     void setBadges(std::vector<Badge *> *badges);
@@ -58,8 +66,12 @@ public:
 
     std::string getName() { return this->m_readerName; }
     std::string getLocation() { return this->m_readerLocation; }
+
     readerLocationType getLocationType() { return this->m_readerLocationType; }
-    readerType getType() { return this->m_readerType; }
+
+    readerProtocol getProtocol() { return this->m_readerProtocol; }
+
+    readerIOputType getIOputType() { return this->m_readerIOputType; }
 };
 
 #endif

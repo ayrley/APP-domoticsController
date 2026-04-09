@@ -52,12 +52,12 @@ void AccessController::reportError(const std::string &message)
 
 void AccessController::start()
 {
-    this->init_reader();
+    this->initReader();
     this->m_runner = std::thread(&AccessController::handle, this);
     this->m_runner.detach();
 }
 
-int AccessController::init_reader()
+int AccessController::initReader()
 {
     if (this->m_readerLocationType == RDR_LOC_IP) {
         this->m_backend = std::make_unique<NetworkReaderBackend>(
@@ -71,14 +71,14 @@ int AccessController::init_reader()
         return -EINVAL;
     }
 
-    if (this->m_readerType == RDR_WIEGAND) {
+    if (this->m_readerProtocol == RDR_WIEGAND) {
         this->m_backend = std::make_unique<WiegandReaderBackend>(
             this->m_readerLocation,
             this->m_ledDuration);
         return 0;
     }
 
-    if (this->m_readerType == RDR_OSDP) {
+    if (this->m_readerProtocol == RDR_OSDP) {
         this->m_backend = std::make_unique<OsdpReaderBackend>();
         return 0;
     }
@@ -87,10 +87,10 @@ int AccessController::init_reader()
     return -EINVAL;
 }
 
-int AccessController::init_reader(readerType type)
+int AccessController::initReader(readerProtocol protocol)
 {
-    this->m_readerType = type;
-    return this->init_reader();
+    this->m_readerProtocol = protocol;
+    return this->initReader();
 }
 
 ReaderDecision AccessController::onBadgeRead(uint64_t badge)
@@ -134,7 +134,7 @@ ReaderDecision AccessController::onBadgeRead(uint64_t badge)
 void AccessController::handle()
 {
     try {
-        if (this->m_backend == nullptr && this->init_reader() != 0)
+        if (this->m_backend == nullptr && this->initReader() != 0)
             return;
 
         this->m_backend->run(
@@ -151,7 +151,7 @@ json AccessController::getJson()
     object += json::object_t::value_type("name", this->m_readerName);
     object += json::object_t::value_type("location", this->m_readerLocation);
     object += json::object_t::value_type("location_type", this->m_readerLocationType == RDR_LOC_IP ? "IP" : "LOCAL");
-    object += json::object_t::value_type("type", this->m_readerType == RDR_OSDP ? "OSDP" : "WIEGAND");
+    object += json::object_t::value_type("protocol", this->m_readerProtocol == RDR_OSDP ? "OSDP" : "WIEGAND");
     if (this->m_grantedAction) {
         object += json::object_t::value_type("granted", this->m_grantedAction->getJson());
     }
@@ -169,15 +169,25 @@ void AccessController::fromJson(const json &jsonObject)
     this->m_readerName = jsonObject["name"];
     this->m_readerLocation = jsonObject["location"];
     this->m_readerLocationType = RDR_LOC_LOCAL;
-    this->m_readerType = RDR_WIEGAND;
+    this->m_readerProtocol = RDR_WIEGAND;
 
     tmpHelp = jsonObject["location_type"];
     if (tmpHelp == "IP")
         this->m_readerLocationType = RDR_LOC_IP;
 
-    tmpHelp = jsonObject["type"];
+    tmpHelp = jsonObject["protocol"];
     if (tmpHelp == "OSDP")
-        this->m_readerType = RDR_OSDP;
+        this->m_readerProtocol = RDR_OSDP;
+
+    if (jsonObject.contains("type")) {
+        tmpHelp = jsonObject["type"];
+        if (tmpHelp == "IN")
+            m_readerIOputType = RDR_IN;
+        else if (tmpHelp == "OUT")
+            m_readerIOputType = RDR_OUT;
+        else
+            m_readerIOputType = RDR_IN_OUT;
+    }
 
     if (jsonObject.contains("granted")) {
         json grantedActionJson = jsonObject["granted"];

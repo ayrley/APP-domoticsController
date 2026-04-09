@@ -15,6 +15,7 @@
 
 Settings::Settings()
 {
+    this->m_zones = new std::vector<AccessZone *>();
     this->m_accessControllers = new std::vector<AccessController *>();
     this->m_actions = new std::vector<Action *>();
     this->m_settingsFile = "/etc/factory.settings.domotics";
@@ -24,6 +25,7 @@ Settings::Settings()
 
 Settings::Settings(std::string settingsFile)
 {
+    this->m_zones = new std::vector<AccessZone *>();
     this->m_accessControllers = new std::vector<AccessController *>();
     this->m_actions = new std::vector<Action *>();
     this->m_settingsFile = settingsFile;
@@ -74,6 +76,26 @@ int Settings::parseReaders()
     return 0;
 }
 
+int Settings::parseZones()
+{
+    if (!this->m_settings.contains("zones")) {
+        return 0;
+    }
+
+    for (const auto &zoneJson : this->m_settings["zones"]) {
+        AccessZone *zone = new AccessZone();
+        zone->fromJson(zoneJson);
+        this->m_zones->push_back(zone);
+
+        // Also add zone's controllers to the flat list for backward compatibility
+        for (auto controller : *zone->getControllers()) {
+            this->m_accessControllers->push_back(controller);
+        }
+    }
+
+    return 0;
+}
+
 int Settings::parseActions()
 {
     for (auto &singleAction : this->m_settings["actions"].items()) {
@@ -113,6 +135,7 @@ int Settings::read()
 
     this->parseSettingsType();
     this->parseReaders();
+    this->parseZones();
     this->parseActions();
 
     return 0;
@@ -204,6 +227,11 @@ enum settingsType Settings::getType()
 Network *Settings::getNetwork()
 {
     return this->m_network;
+}
+
+std::vector<AccessZone *> *Settings::getZones()
+{
+    return this->m_zones;
 }
 
 std::vector<AccessController *> *Settings::getAccessControllers()

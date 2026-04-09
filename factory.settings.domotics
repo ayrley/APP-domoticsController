@@ -14,7 +14,7 @@
     		"name": "wiegand",
     		"location" : "/dev/idtreader_1",
     		"location_type": "LOCAL",
-    		"type" : "WIEGAND",
+    		"protocol" : "WIEGAND",
     		"granted" : {
 				"name" : "AccessGranted",
 				"outputs" : [
@@ -40,7 +40,7 @@
             "name": "net-reader-1",
             "location": "0.0.0.0:9000",
             "location_type": "IP",
-            "type": "WIEGAND",
+            "protocol": "WIEGAND",
             "granted": {
                 "name": "AccessGranted",
                 "outputs": [

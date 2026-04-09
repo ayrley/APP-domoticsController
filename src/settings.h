@@ -11,6 +11,7 @@
 
 #include "network.h"
 #include "accessController.h"
+#include "accessZone.h"
 
 using json = nlohmann::json;
 
@@ -34,10 +35,12 @@ private:
 
     int parseSettingsType();
     int parseReaders();
+    int parseZones();
     int parseActions();
 
     Network *m_network;
 
+    std::vector<AccessZone *> *m_zones;
     std::vector<AccessController *> *m_accessControllers;
     std::vector<Action *> *m_actions;
 
@@ -56,6 +59,7 @@ public:
     int version();
 
     Network *getNetwork();
+    std::vector<AccessZone *> *getZones();
     std::vector<AccessController *> *getAccessControllers();
     std::vector<Action *> *getActions();
 

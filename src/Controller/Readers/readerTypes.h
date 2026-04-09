@@ -6,9 +6,10 @@ enum readerLocationType {
     RDR_LOC_IP
 };
 
-enum readerType {
+enum readerProtocol {
     RDR_WIEGAND = 0,
-    RDR_OSDP
+    RDR_OSDP,
+    RDR_NETWORK
 };
 
 enum ledColor {
