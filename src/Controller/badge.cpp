@@ -1,9 +1,6 @@
 #include <cerrno>
 #include <fstream>
-#include <iostream>
 #include <string>
-
-#include <stdint.h>
 
 #include "badge.h"
 #include "debug.h"
@@ -15,10 +12,6 @@ Badge::Badge(const std::string &badgeFile)
 }
 
 Badge::~Badge()
-{
-}
-
-void Badge::takeAction(bool accessGranted)
 {
 }
 
@@ -45,20 +38,6 @@ int Badge::parse()
 
     if (this->m_badge.is_discarded())
         return -ENOENT;
-
-    try {
-        this->m_firstName = this->m_badge["firstName"];
-    } catch (const std::exception &e) {
-        this->m_firstName = "";
-        DBG("firstName could not be found in " + this->m_badgeFile);
-    }
-
-    try {
-        this->m_lastName = this->m_badge["lastName"];
-    } catch (const std::exception &e) {
-        this->m_lastName = "";
-        DBG("lastName could not be found in " + this->m_badgeFile);
-    }
 
     try {
         this->m_badgeNumber = this->m_badge["badgeNumber"];

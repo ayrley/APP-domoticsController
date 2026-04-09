@@ -1,7 +1,6 @@
 #ifndef __BADGE_H_
 #define __BADGE_H_
 
-#include <mutex>
 #include <string>
 
 #include <stdint.h>
@@ -27,8 +26,6 @@ private:
 public:
     Badge(const std::string &badgeFile);
     ~Badge();
-
-    void takeAction(bool accessGranted);
 
     uint64_t getBadgeNumber();
 

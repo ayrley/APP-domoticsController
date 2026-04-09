@@ -3,7 +3,6 @@
 
 #include <functional>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <thread>
 
@@ -13,9 +12,8 @@
 
 #include "action.h"
 #include "badge.h"
-#include "io.h"
 #include "Readers/readerBackend.h"
-#include "readerTypes.h"
+#include "Readers/readerTypes.h"
 
 using json = nlohmann::json;
 
@@ -39,17 +37,19 @@ private:
     std::function<void(readerLocationType, const std::string &)> m_errorHandler;
 
     void handle();
-    ReaderDecision onBadgeRead(uint64_t badge);
     void reportError(const std::string &message);
+
+    ReaderDecision onBadgeRead(uint64_t badge);
 
 public:
     Reader();
     Reader(std::vector<Badge *> *badges);
     ~Reader();
 
-    void start();
     int init_reader();
     int init_reader(readerType type);
+    
+    void start();
     void setBadges(std::vector<Badge *> *badges);
     void setErrorHandler(const std::function<void(readerLocationType, const std::string &)> &handler);
     void fromJson(const json &jsonObject);

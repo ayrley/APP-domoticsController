@@ -1,8 +1,6 @@
 #ifndef __IO_H_
 #define __IO_H_
 
-#include <memory>
-#include <mutex>
 #include <string>
 
 #include <stdint.h>
@@ -25,28 +23,17 @@ enum ioDirection {
 class IO
 {
 private:
-    struct NetworkInputState {
-        std::mutex mtx;
-        int currentValue = 0;
-        int pendingValue = 0;
-        bool pending = false;
-        bool listenerStarted = false;
-    };
-
     std::string m_name;
     std::string m_location;
-    std::string m_fullLocation;
 
     enum ioLocationType m_locationType;
     enum ioDirection m_direction;
 
     bool m_exported;
-    std::shared_ptr<NetworkInputState> m_networkInputState;
 
     int exportIo();
     int getDigitalIo();
     int getAnalogIo();
-    void startNetworkInputListener();
 
 public:
     IO();

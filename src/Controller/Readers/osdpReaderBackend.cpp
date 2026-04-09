@@ -1,8 +1,6 @@
 #include "osdpReaderBackend.h"
 
-void OsdpReaderBackend::run(const BadgeReadCallback &onBadgeRead,
-                            const ErrorCallback &onError)
+void OsdpReaderBackend::run(const BadgeReadCallback &,
+                            const ErrorCallback &)
 {
-    (void) onBadgeRead;
-    (void) onError;
 }

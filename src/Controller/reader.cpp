@@ -1,10 +1,6 @@
 #include <cerrno>
-#include <iostream>
 #include <string>
-#include <thread>
-#include <vector>
 
-#include <errno.h>
 #include <stdint.h>
 
 #include "action.h"

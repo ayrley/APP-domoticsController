@@ -5,7 +5,6 @@
 
 #include <cerrno>
 #include <cstdlib>
-#include <unistd.h>
 
 #include <system/File.hpp>
 
@@ -125,11 +124,9 @@ void WiegandReaderBackend::setWiegandLed(enum ledColor color)
 }
 
 void WiegandReaderBackend::run(const BadgeReadCallback &onBadgeRead,
-                               const ErrorCallback &onError)
+                               const ErrorCallback &)
 {
     uint64_t badge = 0;
-
-    (void) onError;
 
     while (true) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
