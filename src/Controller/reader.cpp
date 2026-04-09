@@ -102,6 +102,8 @@ ReaderDecision Reader::onBadgeRead(uint64_t badge)
         for (auto singleBadge : *this->m_badges) {
             if (singleBadge && singleBadge->valid(badge)) {
                 decision.granted = true;
+                decision.firstName = singleBadge->getFirstName();
+                decision.lastName = singleBadge->getLastName();
                 actionToExecute = this->m_grantedAction;
                 break;
             }
@@ -122,7 +124,9 @@ ReaderDecision Reader::onBadgeRead(uint64_t badge)
         }
     }
 
-    EventLog::addBadgeRead(this->m_readerName, badge, decision.granted);
+    EventLog::addBadgeRead(this->m_readerName, badge, decision.granted,
+                           decision.firstName, decision.lastName);
+
 
     return decision;
 }

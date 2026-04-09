@@ -18,11 +18,18 @@ std::deque<EventLogEntry> g_eventLog;
 constexpr std::size_t kMaxEntries = 500;
 }
 
-void EventLog::addBadgeRead(const std::string &readerName, uint64_t badge, bool granted)
+void EventLog::addBadgeRead(const std::string &readerName, uint64_t badge, bool granted,
+                             const std::string &firstName, const std::string &lastName)
 {
     std::stringstream message;
     message << "badge=" << badge << " reader=" << readerName
             << " result=" << (granted ? "GRANTED" : "DENIED");
+    if (!firstName.empty() || !lastName.empty()) {
+        message << " name=" << firstName;
+        if (!lastName.empty()) {
+            message << " " << lastName;
+        }
+    }
     append("[BADGE] " + message.str());
 }
 

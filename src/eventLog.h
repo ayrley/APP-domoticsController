@@ -14,7 +14,8 @@ struct EventLogEntry {
 class EventLog
 {
 public:
-    static void addBadgeRead(const std::string &readerName, uint64_t badge, bool granted);
+    static void addBadgeRead(const std::string &readerName, uint64_t badge, bool granted,
+                             const std::string &firstName = "", const std::string &lastName = "");
     static void addOutputToggle(const std::string &outputName, bool high, const std::string &source);
     static void addTamper(bool detected);
     static void clear();

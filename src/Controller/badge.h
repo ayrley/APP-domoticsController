@@ -29,6 +29,9 @@ public:
 
     uint64_t getBadgeNumber();
 
+    std::string getFirstName();
+    std::string getLastName();
+
     bool valid(uint64_t badgeToCheck);
 };
 

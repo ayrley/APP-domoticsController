@@ -12,6 +12,8 @@ using json = nlohmann::json;
 struct ReaderDecision {
     bool granted = false;
     json actionOutputs = json::array();
+    std::string firstName;
+    std::string lastName;
 };
 
 class ReaderBackend

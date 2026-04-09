@@ -40,6 +40,20 @@ int Badge::parse()
         return -ENOENT;
 
     try {
+        this->m_firstName = this->m_badge["firstName"];
+    } catch (const std::exception &e) {
+        this->m_firstName = "";
+        DBG("firstName could not be found in " + this->m_badgeFile);
+    }
+
+    try {
+        this->m_lastName = this->m_badge["lastName"];
+    } catch (const std::exception &e) {
+        this->m_lastName = "";
+        DBG("lastName could not be found in " + this->m_badgeFile);
+    }
+
+    try {
         this->m_badgeNumber = this->m_badge["badgeNumber"];
     } catch (const std::exception &e) {
         this->m_badgeNumber = 0;
@@ -57,4 +71,14 @@ bool Badge::valid(uint64_t badgeToCheck)
 uint64_t Badge::getBadgeNumber()
 {
     return this->m_badgeNumber;
+}
+
+std::string Badge::getFirstName()
+{
+    return this->m_firstName;
+}
+
+std::string Badge::getLastName()
+{
+    return this->m_lastName;
 }
