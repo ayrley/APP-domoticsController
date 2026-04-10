@@ -20,6 +20,7 @@ class SettingsPage;
 class ManualControlPage;
 class ScreensaverPage;
 class OrbitButton;
+class TamperBorderOverlay;
 
 class Screen
 {
@@ -49,8 +50,11 @@ private:
 
     std::thread m_statsThread;
     std::atomic<bool> m_stopStatsThread;
-    nanogui::Widget *m_tamperOverlay;
+    TamperBorderOverlay *m_tamperOverlay;
     bool m_tamperDetected{false};
+
+    std::string formatDutchDate(const std::tm &localTime);
+    std::string formatDutchTime(const std::tm &localTime);
 
     void startStatsUpdates();
     void updateSystemStats();
