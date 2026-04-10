@@ -27,6 +27,7 @@
 #include "settings.h"
 #include "statusLeds.h"
 #include "tamperSwitch.h"
+#include "serialBus.h"
 
 namespace {
 constexpr int SCREENSAVER_BACKLIGHT_BRIGHTNESS = 12;
@@ -37,6 +38,7 @@ Settings *g_factorySettings = nullptr;
 StatusLeds *g_statusLeds = nullptr;
 std::vector<Badge *> *g_badges = new std::vector<Badge *>();
 std::vector<IO *> *g_ios = new std::vector<IO *>();
+std::vector<SerialBus *> *g_busses = new std::vector<SerialBus *>();
 std::vector<Action *> *g_actions = new std::vector<Action *>();
 
 bool hasNetworkReadersConfigured()
@@ -195,6 +197,51 @@ int loadIos()
             IO *io = new IO();
             io->fromJson(singleIo.value());
             g_ios->push_back(io);
+        }
+    }
+
+    return ret;
+}
+
+int loadBusses()
+{
+    int ret = 0;
+    std::stringstream bussesStream;
+    std::string bussesDir;
+
+    bussesStream << DIR_SHARED << "ios";
+    bussesStream >> bussesDir;
+
+    for (const auto &entry : std::filesystem::directory_iterator(bussesDir)) {
+        json busFileObject;
+        std::ifstream jsonFile(entry.path());
+
+        if (!jsonFile.is_open()) {
+            ERR("Unable to open bus config: " + entry.path().string());
+            continue;
+        }
+
+        if (jsonFile.peek() == std::ifstream::traits_type::eof()) {
+            ERR("Skipping empty bus config: " + entry.path().string());
+            continue;
+        }
+
+        try {
+            busFileObject = json::parse(jsonFile);
+        } catch (const std::exception &e) {
+            ERR("Skipping invalid bus config '" + entry.path().string() + "': " + e.what());
+            continue;
+        }
+
+        if (!busFileObject.contains("SerialBusses") || !busFileObject["SerialBusses"].is_array()) {
+            ERR("Skipping bus config without array 'SerialBusses': " + entry.path().string());
+            continue;
+        }
+
+        for (auto &singleBus : busFileObject["SerialBusses"].items()) {
+            SerialBus *bus = new SerialBus();
+            bus->fromJson(singleBus.value());
+            g_busses->push_back(bus);
         }
     }
 
@@ -363,6 +410,16 @@ int main(void)
         LOG("IOs loaded");
     } catch (const std::exception &e) {
         ERR("IO startup failed: " << e.what());
+        statusLeds.showError(StatusLeds::ERROR_IO);
+        lifeLed.stop();
+        return 1;
+    }
+
+    try {
+        loadBusses();
+        LOG("Busses loaded");
+    } catch (const std::exception &e) {
+        ERR("Bus startup failed: " << e.what());
         statusLeds.showError(StatusLeds::ERROR_IO);
         lifeLed.stop();
         return 1;
