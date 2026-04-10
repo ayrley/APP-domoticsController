@@ -14,7 +14,7 @@
 
 #include <nanovg.h>
 
-#include "../Controller/io.h"
+#include "../Peripherals/io.h"
 
 namespace
 {
