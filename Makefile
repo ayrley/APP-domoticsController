@@ -15,15 +15,18 @@ LIBS_ROOT := libs
 LOCAL_LIBREMOTE_DIR := $(LIBS_ROOT)/LIB-remote
 LOCAL_LIBFUNCMOD_DIR := $(LIBS_ROOT)/LIB-funcmod
 LOCAL_NANOGUI_DIR := $(LIBS_ROOT)/nanogui
+LOCAL_LIBOSDP_DIR := $(LIBS_ROOT)/libosdp
 
 LOCAL_LIBREMOTE_STATIC := $(LOCAL_LIBREMOTE_DIR)/build/libremote.a
 LOCAL_LIBFUNCMOD_STATIC := $(LOCAL_LIBFUNCMOD_DIR)/build/libfuncmod.a
 LOCAL_NANOGUI_BUILD_DIR := $(LOCAL_NANOGUI_DIR)/build
+LOCAL_LIBOSDP_BUILD_DIR := $(LOCAL_LIBOSDP_DIR)/build
 
 THIRD_PARTY_INCLUDE_DIRS := \
 	$(HOST_DIR)/include \
 	$(HOST_DIR)/include/LIB-remote \
 	$(HOST_DIR)/include/LIB-funcmod \
+	$(HOST_DIR)/include/libosdp \
 	$(TARGET_DIR)/usr/include \
 	/usr/include \
 	/usr/local/include
@@ -40,23 +43,33 @@ THIRD_PARTY_INCLUDE_DIRS += ../nanogui_mod/include \
 		../nanogui_mod/ext/nanovg \
 		../nanogui_mod/ext/nanovg/src \
 		../LIB-remote/src \
-		../LIB-funcMod/src
+		../LIB-funcMod/src \
+		../libosdp/include
 
 THIRD_PARTY_LIB_DIRS += ../nanogui_mod/build \
 		  ../LIB-remote/build \
-		  ../LIB-funcMod/build
+		  ../LIB-funcMod/build \
+		  ../libosdp/build/lib
 
 FOUND_REMOTE_HEADER := $(firstword $(foreach d,$(THIRD_PARTY_INCLUDE_DIRS),$(wildcard $(d)/LIB-remote/remoteBadgeChannel.h) $(wildcard $(d)/libremote/remoteBadgeChannel.h) $(wildcard $(d)/remoteBadgeChannel.h)))
 FOUND_FUNCMOD_HEADER := $(firstword $(foreach d,$(THIRD_PARTY_INCLUDE_DIRS),$(wildcard $(d)/LIB-funcmod/common/Path.hpp) $(wildcard $(d)/libfuncmod/common/Path.hpp) $(wildcard $(d)/common/Path.hpp)))
 FOUND_NANOGUI_HEADER := $(firstword $(foreach d,$(THIRD_PARTY_INCLUDE_DIRS),$(wildcard $(d)/nanogui/nanogui.h)))
+FOUND_OSDP_HEADER := $(firstword $(foreach d,$(THIRD_PARTY_INCLUDE_DIRS),$(wildcard $(d)/libosdp/osdp.hpp) $(wildcard $(d)/osdp.hpp)))
 
 FOUND_REMOTE_LIB := $(firstword $(foreach d,$(THIRD_PARTY_LIB_DIRS),$(wildcard $(d)/libremote.a)))
 FOUND_FUNCMOD_LIB := $(firstword $(foreach d,$(THIRD_PARTY_LIB_DIRS),$(wildcard $(d)/libfuncmod.so*) $(wildcard $(d)/libfuncmod.a)))
 FOUND_NANOGUI_LIB := $(firstword $(foreach d,$(THIRD_PARTY_LIB_DIRS),$(wildcard $(d)/libnanogui.so*) $(wildcard $(d)/libnanogui.a)))
+FOUND_OSDP_STATIC_LIB := $(firstword $(foreach d,$(THIRD_PARTY_LIB_DIRS),$(wildcard $(d)/libosdpstatic.a) $(wildcard $(d)/libosdp.a)))
 
 NEED_LOCAL_LIBREMOTE := $(if $(and $(FOUND_REMOTE_HEADER),$(FOUND_REMOTE_LIB)),0,1)
 NEED_LOCAL_LIBFUNCMOD := $(if $(and $(FOUND_FUNCMOD_HEADER),$(FOUND_FUNCMOD_LIB)),0,1)
 NEED_LOCAL_NANOGUI := $(if $(and $(FOUND_NANOGUI_HEADER),$(FOUND_NANOGUI_LIB)),0,1)
+NEED_LOCAL_LIBOSDP := $(if $(and $(FOUND_OSDP_HEADER),$(FOUND_OSDP_STATIC_LIB)),0,1)
+
+OSDP_LINK_FILE := $(FOUND_OSDP_STATIC_LIB)
+ifeq ($(NEED_LOCAL_LIBOSDP),1)
+OSDP_LINK_FILE := $(LOCAL_LIBOSDP_BUILD_DIR)/lib/libosdpstatic.a
+endif
 
 SRCS	:= 	$(wildcard src/*.cpp) \
 			$(wildcard src/Controller/*.cpp) \
@@ -82,13 +95,16 @@ INCS 	:= 	-I. \
 		-I$(HOST_DIR)/include/nanovg \
 		-I$(HOST_DIR)/include/nanogui/ext/nanovg/src \
 		-I$(HOST_DIR)/include/LIB-funcmod/ \
-		-I$(HOST_DIR)/include/LIB-remote/
+		-I$(HOST_DIR)/include/LIB-remote/ \
+		-I$(HOST_DIR)/include/libosdp
+
 
 INCS += -I../nanogui_mod/include \
 		-I../nanogui_mod/ext/nanovg \
 		-I../nanogui_mod/ext/nanovg/src \
 		-I../LIB-remote/src \
-		-I../LIB-funcMod/src
+		-I../LIB-funcMod/src \
+		-I../libosdp/include
 
 ifeq ($(NEED_LOCAL_LIBREMOTE),1)
 INCS += -I$(LOCAL_LIBREMOTE_DIR)/src
@@ -102,16 +118,22 @@ ifeq ($(NEED_LOCAL_NANOGUI),1)
 INCS += -I$(LOCAL_NANOGUI_DIR)/include \
 		-I$(LOCAL_NANOGUI_DIR)/ext/nanovg/src
 endif
+
+ifeq ($(NEED_LOCAL_LIBOSDP),1)
+INCS += -I$(LOCAL_LIBOSDP_DIR)/include
+endif
 	 	
 LIBS	:= -lnanogui \
 			-lremote \
-			-lfuncmod
+			-lfuncmod \
+			$(OSDP_LINK_FILE) \
+			-lcrypto
 
 LIBDIR	:= 	-L$(HOST_DIR)/usr/lib \
 		-L$(TARGET_DIR)/usr/lib \
 		-L../nanogui_mod/build \
 		-L../LIB-remote/build \
-		-L../LIB-funcMod/build \
+		-L../LIB-funcMod/build
 
 ifeq ($(NEED_LOCAL_LIBREMOTE),1)
 LIBDIR += -L$(LOCAL_LIBREMOTE_DIR)/build
@@ -123,6 +145,10 @@ endif
 
 ifeq ($(NEED_LOCAL_NANOGUI),1)
 LIBDIR += -L$(LOCAL_NANOGUI_BUILD_DIR)
+endif
+
+ifeq ($(NEED_LOCAL_LIBOSDP),1)
+LIBDIR += -L$(LOCAL_LIBOSDP_BUILD_DIR)/lib
 endif
 
 LDFLAGS += -Wl,-rpath,$(HOST_DIR)
@@ -177,6 +203,11 @@ prepare-thirdparty:
 		cmake -S "$(LOCAL_NANOGUI_DIR)" -B "$(LOCAL_NANOGUI_BUILD_DIR)" -DCMAKE_BUILD_TYPE=$(if $(filter $(BUILD),debug),Debug,Release); \
 		cmake --build "$(LOCAL_NANOGUI_BUILD_DIR)"; \
 	fi
+	@if [ "$(NEED_LOCAL_LIBOSDP)" = "1" ] && ! ls "$(LOCAL_LIBOSDP_BUILD_DIR)"/lib/libosdp* >/dev/null 2>&1; then \
+		echo "[deps] Building local libosdp"; \
+		cmake -S "$(LOCAL_LIBOSDP_DIR)" -B "$(LOCAL_LIBOSDP_BUILD_DIR)" -DOPT_OSDP_LIB_ONLY=ON -DOPT_BUILD_STATIC=ON -DOPT_BUILD_SHARED=OFF -DCMAKE_BUILD_TYPE=$(if $(filter $(BUILD),debug),Debug,Release); \
+		cmake --build "$(LOCAL_LIBOSDP_BUILD_DIR)"; \
+	fi
 
 $(TARGET): prepare-build prepare-thirdparty $(OBJS) | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $(OBJS) $(LDFLAGS) $(LIBDIR) $(LIBS)
@@ -193,7 +224,8 @@ clean:
 	rm -rf $(BUILD_DIR) $(NAME) \
 		$(LOCAL_LIBREMOTE_DIR)/build \
 		$(LOCAL_LIBFUNCMOD_DIR)/build \
-		$(LOCAL_NANOGUI_BUILD_DIR)
+		$(LOCAL_NANOGUI_BUILD_DIR) \
+		$(LOCAL_LIBOSDP_BUILD_DIR)
 	
 $(NAME)-linter:
 	clang-tidy $(SRCS) -- $(INCS) > clang-tidy-output.txt 2>&1
