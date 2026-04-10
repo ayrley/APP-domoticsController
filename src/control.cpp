@@ -28,7 +28,9 @@
 #include "statusLeds.h"
 #include "tamperSwitch.h"
 
+namespace {
 constexpr int SCREENSAVER_BACKLIGHT_BRIGHTNESS = 12;
+}
 
 Settings *g_userSettings = nullptr;
 Settings *g_factorySettings = nullptr;
