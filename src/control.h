@@ -3,14 +3,8 @@
 
 #include "statusLeds.h"
 #include "settings.h"
-
-int main(void);
-int loadSettings();
-int loadBadges();
-int startReaders(StatusLeds &statusLeds);
-int loadIos();
-
-Settings *getSetting(enum settingsType settingType);
+#include "proximity.h"
+#include "tamperSwitch.h"
 
 #ifdef DEBUG
 #define DIR_ETC ""
@@ -19,5 +13,21 @@ Settings *getSetting(enum settingsType settingType);
 #define DIR_ETC "/etc/"
 #define DIR_SHARED "/mnt/data/"
 #endif
+
+bool hasNetworkReadersConfigured();
+bool hasDisplayServer();
+bool shouldUseFramebufferGui();
+bool enableNullPlatformIfSupported();
+
+void clearBadgesCache();
+void reloadBadgesCache();
+
+int loadSettings();
+int loadBadges();
+int loadIos();
+int startReaders(StatusLeds &statusLeds);
+int startActions();
+int runGui(Proximity &proximitySensor, StatusLeds &statusLeds, TamperSwitch &tamperSwitch);
+int main(void);
 
 #endif

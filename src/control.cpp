@@ -28,10 +28,7 @@
 #include "statusLeds.h"
 #include "tamperSwitch.h"
 
-namespace
-{
 constexpr int SCREENSAVER_BACKLIGHT_BRIGHTNESS = 12;
-}
 
 Settings *g_userSettings = nullptr;
 Settings *g_factorySettings = nullptr;
@@ -40,8 +37,6 @@ std::vector<Badge *> *g_badges = new std::vector<Badge *>();
 std::vector<IO *> *g_ios = new std::vector<IO *>();
 std::vector<Action *> *g_actions = new std::vector<Action *>();
 
-namespace
-{
 bool hasNetworkReadersConfigured()
 {
     if (g_userSettings == nullptr || g_userSettings->getAccessControllers() == nullptr) {
@@ -55,7 +50,6 @@ bool hasNetworkReadersConfigured()
     }
 
     return false;
-}
 }
 
 void clearBadgesCache()
