@@ -1,0 +1,9 @@
+[submodule "libs/LIB-remote"]
+	path = libs/LIB-remote
+	url = git@me.github.com:ayrley/LIB-remote.git
+[submodule "libs/LIB-funcmod"]
+	path = libs/LIB-funcmod
+	url = git@me.github.com:ayrley/LIB-funcmod.git
+[submodule "libs/nanogui"]
+	path = libs/nanogui
+	url = git@me.github.com:ayrley/nanogui.git
