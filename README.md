@@ -41,7 +41,7 @@ Important locations:
 - `ios/`: IO, status LED, life LED, and tamper configuration
 - `factory.settings.domotics`: factory defaults
 - `user.settings.domotics`: runtime/user overrides
-- `../LIB-remote/`: external badge and GPIO TCP transport library used by readers, actions, and IP IO
+- `libs/LIB-remote/`: local badge and GPIO TCP transport library submodule used by readers, actions, and IP IO
 
 ## Building
 
@@ -51,7 +51,7 @@ This repository is built with the provided `Makefile`.
 
 - `make`
 - A C++17 compiler available as `g++` or through `CROSS_COMPILE`
-- Built `LIB-remote` dependency available at `../LIB-remote`
+- Local submodules in `libs/` (`LIB-remote`, `LIB-funcmod`, `nanogui`)
 - NanoGUI headers and libraries reachable through `HOST_DIR` and `TARGET_DIR`
 
 The Makefile expects NanoGUI and related headers under paths such as:
@@ -65,10 +65,37 @@ The Makefile expects NanoGUI and related headers under paths such as:
 ### Build commands
 
 ```bash
-make -C ../LIB-remote static
 make
 make debug
+make release
+make local
 make clean
+```
+
+Build mode matrix:
+
+| Command | Typical use | Dependency source |
+| --- | --- | --- |
+| `make` | Standard target/host build | System `HOST_DIR`/`TARGET_DIR` paths first, then `libs/` fallback if missing |
+| `make debug` | Debuggable build (`-O0 -g`) | Same resolution as `make` |
+| `make release` | Optimized build (`-O2`) | Same resolution as `make` |
+| `make local` | Developer machine with sibling repos | `../nanogui_mod`, `../LIB-remote`, `../LIB-funcMod` first; no `libs/` fallback when those satisfy headers/libs |
+| `make clean` | Remove generated artifacts | Cleans project output and local fallback builds under `libs/*/build` |
+
+`make local` is intended for a developer setup with sibling repositories and uses:
+
+- `../nanogui_mod`
+- `../LIB-remote`
+- `../LIB-funcMod`
+
+When these local paths contain the required headers and libraries, the Makefile does not build fallback dependencies from `libs/`.
+
+Optional manual dependency build:
+
+```bash
+make -C libs/LIB-remote static
+make -C libs/LIB-funcmod static
+cmake -S libs/nanogui -B libs/nanogui/build && cmake --build libs/nanogui/build
 ```
 
 Cross-compilation is supported via `CROSS_COMPILE`:
@@ -77,15 +104,38 @@ Cross-compilation is supported via `CROSS_COMPILE`:
 make CROSS_COMPILE=arm-linux-gnueabihf-
 ```
 
-The build output is written to `build-make/control` and symlinked as `./control` in the project root.
+The build output is written to `build-make/master-control` and symlinked as `./master-control` in the project root.
 
-The main binary links against `../LIB-remote/build/libremote.a`. If that static library is missing, the Makefile will build it automatically.
+The main binary links against `libremote`, `libfuncmod`, and `libnanogui`.
+
+If these dependencies cannot be found in configured include/library paths, the Makefile falls back to building them from `libs/`:
+
+- `libs/LIB-remote` via its Makefile
+- `libs/LIB-funcmod` via its Makefile
+- `libs/nanogui` via CMake
+
+`make clean` removes both project build artifacts and locally built fallback dependency outputs under `libs/*/build`.
 
 Useful target:
 
 ```bash
-make control-linter
+make master-control-linter
 ```
+
+## Running
+
+Run from the project root after a successful build:
+
+```bash
+./master-control
+```
+
+The controller reads runtime files from the configured shared/etc locations and expects:
+
+- `ios/` definitions
+- `badges/` badge files
+- `factory.settings.domotics` defaults
+- `user.settings.domotics` overrides (auto-created on first run)
 
 ## Configuration
 
