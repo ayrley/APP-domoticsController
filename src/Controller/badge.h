@@ -35,6 +35,13 @@ private:
     std::vector<BadgeRule> m_rules;
 
     int parse();
+    int parseMinutesOfDay(const std::string &value);
+
+    bool timeInWindow(int currentMinutes, int startMinutes, int endMinutes);
+    bool containsWeekday(const json &daysOfWeek, int weekday);
+    bool containsWeekday(const std::vector<int> &daysOfWeek, int weekday);
+    bool containsZone(const json &zones, const std::string &zoneName);
+    bool containsZone(const std::vector<std::string> &zones, const std::string &zoneName);
 
 public:
     Badge(const std::string &badgeFile);

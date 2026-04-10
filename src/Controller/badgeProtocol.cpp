@@ -8,9 +8,7 @@
 
 using json = nlohmann::json;
 
-namespace
-{
-bool parseUnsignedBadge(const std::string &text, uint64_t &badge)
+bool BadgeProtocol::parseUnsignedBadge(const std::string &text, uint64_t &badge)
 {
     if (text.empty())
         return false;
@@ -24,7 +22,6 @@ bool parseUnsignedBadge(const std::string &text, uint64_t &badge)
 
     return true;
 }
-} // namespace
 
 bool BadgeProtocol::parseBadgeFromPayload(const std::string &payload, uint64_t &badge) const
 {
@@ -58,7 +55,7 @@ bool BadgeProtocol::parseBadgeFromPayload(const std::string &payload, uint64_t &
             }
 
             if (object["badge"].is_string()) {
-                return parseUnsignedBadge(object["badge"].get<std::string>(), badge);
+                return this->parseUnsignedBadge(object["badge"].get<std::string>(), badge);
             }
         }
 
@@ -69,14 +66,14 @@ bool BadgeProtocol::parseBadgeFromPayload(const std::string &payload, uint64_t &
             }
 
             if (object["badgeNumber"].is_string()) {
-                return parseUnsignedBadge(object["badgeNumber"].get<std::string>(), badge);
+                return this->parseUnsignedBadge(object["badgeNumber"].get<std::string>(), badge);
             }
         }
 
         return false;
     }
 
-    return parseUnsignedBadge(trimmed, badge);
+    return this->parseUnsignedBadge(trimmed, badge);
 }
 
 std::string BadgeProtocol::buildReply(bool validBadge, uint64_t badge,

@@ -7,9 +7,8 @@
 #include "badge.h"
 #include "debug.h"
 
-namespace
-{
-int parseMinutesOfDay(const std::string &value)
+
+int Badge::parseMinutesOfDay(const std::string &value)
 {
     std::stringstream stream(value);
     int hour = 0;
@@ -24,7 +23,7 @@ int parseMinutesOfDay(const std::string &value)
     return (hour * 60) + minute;
 }
 
-bool timeInWindow(int currentMinutes, int startMinutes, int endMinutes)
+bool Badge::timeInWindow(int currentMinutes, int startMinutes, int endMinutes)
 {
     if (startMinutes < 0 || endMinutes < 0) {
         return false;
@@ -37,7 +36,7 @@ bool timeInWindow(int currentMinutes, int startMinutes, int endMinutes)
     return currentMinutes >= startMinutes || currentMinutes <= endMinutes;
 }
 
-bool containsWeekday(const json &daysOfWeek, int weekday)
+bool Badge::containsWeekday(const json &daysOfWeek, int weekday)
 {
     if (!daysOfWeek.is_array()) {
         return false;
@@ -52,7 +51,7 @@ bool containsWeekday(const json &daysOfWeek, int weekday)
     return false;
 }
 
-bool containsWeekday(const std::vector<int> &daysOfWeek, int weekday)
+bool Badge::containsWeekday(const std::vector<int> &daysOfWeek, int weekday)
 {
     for (int day : daysOfWeek) {
         if (day == weekday) {
@@ -63,7 +62,7 @@ bool containsWeekday(const std::vector<int> &daysOfWeek, int weekday)
     return false;
 }
 
-bool containsZone(const json &zones, const std::string &zoneName)
+bool Badge::containsZone(const json &zones, const std::string &zoneName)
 {
     if (zoneName.empty() || !zones.is_array()) {
         return false;
@@ -78,7 +77,7 @@ bool containsZone(const json &zones, const std::string &zoneName)
     return false;
 }
 
-bool containsZone(const std::vector<std::string> &zones, const std::string &zoneName)
+bool Badge::containsZone(const std::vector<std::string> &zones, const std::string &zoneName)
 {
     if (zoneName.empty()) {
         return false;
@@ -92,7 +91,6 @@ bool containsZone(const std::vector<std::string> &zones, const std::string &zone
 
     return false;
 }
-} // namespace
 
 Badge::Badge(const std::string &badgeFile)
 {
@@ -183,8 +181,8 @@ int Badge::parse()
                     }
 
                     BadgeTimeWindow timeWindow;
-                    timeWindow.startMinutes = parseMinutesOfDay(timeWindowJson["start"]);
-                    timeWindow.endMinutes = parseMinutesOfDay(timeWindowJson["end"]);
+                    timeWindow.startMinutes = this->parseMinutesOfDay(timeWindowJson["start"]);
+                    timeWindow.endMinutes = this->parseMinutesOfDay(timeWindowJson["end"]);
                     rule.timeWindows.push_back(timeWindow);
                 }
             }
@@ -220,12 +218,12 @@ bool Badge::valid(uint64_t badgeToCheck, const std::string &zoneName, std::strin
     bool timeMismatch = false;
 
     for (const auto &rule : this->m_rules) {
-        if (!rule.zones.empty() && !containsZone(rule.zones, zoneName)) {
+        if (!rule.zones.empty() && !this->containsZone(rule.zones, zoneName)) {
             zoneMismatch = true;
             continue;
         }
 
-        if (!rule.daysOfWeek.empty() && !containsWeekday(rule.daysOfWeek, weekday)) {
+        if (!rule.daysOfWeek.empty() && !this->containsWeekday(rule.daysOfWeek, weekday)) {
             weekdayMismatch = true;
             continue;
         }
@@ -234,7 +232,7 @@ bool Badge::valid(uint64_t badgeToCheck, const std::string &zoneName, std::strin
             bool matchesTimeWindow = false;
 
             for (const auto &timeWindow : rule.timeWindows) {
-                if (timeInWindow(currentMinutes, timeWindow.startMinutes, timeWindow.endMinutes)) {
+                if (this->timeInWindow(currentMinutes, timeWindow.startMinutes, timeWindow.endMinutes)) {
                     matchesTimeWindow = true;
                     break;
                 }
