@@ -2,6 +2,7 @@
 #define __OSDP_READER_BACKEND_H_
 
 #include <osdp.hpp>
+#include <hardware/Uart.hpp>
 
 #include "readerBackend.h"
 

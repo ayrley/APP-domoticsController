@@ -82,7 +82,7 @@ int AccessController::initReader()
     }
 
     if (this->m_readerProtocol == RDR_OSDP) {
-        this->m_backend = std::make_unique<OsdpReaderBackend>();
+        this->m_backend = std::make_unique<OsdpReaderBackend>(this->m_readerLocation);
         return 0;
     }
 
