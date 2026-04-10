@@ -1,3 +1,14 @@
+#include <chrono>
+#include <cmath>
+#include <cstdlib>
+#include <ctime>
+#include <string>
+#include <thread>
+
+#include <nanogui/nanogui.h>
+#include <nanogui/opengl.h>
+#include <formatting/datetime.hpp>
+
 #include "screen.h"
 #include "system.h"
 
@@ -11,16 +22,6 @@
 #include "GUI/Pages/screensaverPage.h"
 #include "GUI/Pages/settingsPage.h"
 #include "GUI/tamperBorderOverlay.h"
-
-#include <chrono>
-#include <cmath>
-#include <cstdlib>
-#include <ctime>
-#include <string>
-#include <thread>
-
-#include <nanogui/nanogui.h>
-#include <nanogui/opengl.h>
 
 namespace {
 constexpr int PAGE_LANDING = 0;
@@ -36,38 +37,6 @@ constexpr float ORBIT_BASE_BADGES = -PI * 0.1f;
 constexpr float ORBIT_BASE_MANUAL = PI * 0.3f;
 constexpr float ORBIT_BASE_SETTINGS = PI * 0.7f;
 constexpr float ORBIT_BASE_LOGGING = PI * 1.1f;
-}
-
-std::string Screen::formatDutchDate(const std::tm &localTime)
-{
-    static const char *kWeekdays[] = {
-        "zondag", "maandag", "dinsdag", "woensdag", "donderdag", "vrijdag", "zaterdag"
-    };
-    static const char *kMonths[] = {
-        "januari", "februari", "maart", "april", "mei", "juni",
-        "juli", "augustus", "september", "oktober", "november", "december"
-    };
-
-    char buffer[96] = {0};
-    std::snprintf(buffer,
-                  sizeof(buffer),
-                  "%s %d %s %d",
-                  kWeekdays[localTime.tm_wday],
-                  localTime.tm_mday,
-                  kMonths[localTime.tm_mon],
-                  localTime.tm_year + 1900);
-    return std::string(buffer);
-}
-
-std::string Screen::formatDutchTime(const std::tm &localTime)
-{
-    char buffer[16] = {0};
-    std::snprintf(buffer,
-                  sizeof(buffer),
-                  "%02d:%02d",
-                  localTime.tm_hour,
-                  localTime.tm_min);
-    return std::string(buffer);
 }
 
 Screen::Screen(int width,
@@ -296,8 +265,8 @@ void Screen::startStatsUpdates() {
             const std::time_t nowTime = std::time(nullptr);
             std::tm localTime {};
             localtime_r(&nowTime, &localTime);
-            std::string dateCaption = formatDutchDate(localTime);
-            std::string timeCaption = formatDutchTime(localTime);
+            std::string dateCaption = dateTime::formatDutchDate(localTime);
+            std::string timeCaption = dateTime::formatDutchTime(localTime);
             previousSample = currentSample;
 
             nanogui::async([this, cpuUsage, cpuUsageFraction, ramUsage, ramUsageFraction, dateCaption, timeCaption]() {
@@ -321,8 +290,8 @@ void Screen::updateSystemStats() {
     const std::time_t nowTime = std::time(nullptr);
     std::tm localTime {};
     localtime_r(&nowTime, &localTime);
-    std::string dateCaption = formatDutchDate(localTime);
-    std::string timeCaption = formatDutchTime(localTime);
+    std::string dateCaption = dateTime::formatDutchDate(localTime);
+    std::string timeCaption = dateTime::formatDutchTime(localTime);
 
     if (m_overviewPage) {
         m_overviewPage->setCpu("measuring...", 0.0f);

@@ -35,16 +35,21 @@ private:
     BadgePage *m_badgePage;
     LoggingPage *m_loggingPage;
     ScreensaverPage *m_screensaverPage;
+
     OrbitButton *m_overviewOrbitButton;
     OrbitButton *m_badgesOrbitButton;
     OrbitButton *m_settingsOrbitButton;
     OrbitButton *m_manualOrbitButton;
     OrbitButton *m_loggingOrbitButton;
+
     int m_landingCenterX;
     int m_landingCenterY;
-    float m_landingOrbitRadius;
     int m_currentPage{0};
+
+    float m_landingOrbitRadius;
+
     bool m_presenceDetected{true};
+
     std::function<void()> m_onBadgesChanged;
     std::function<void()> m_onScreensaverWakeRequest;
 
@@ -52,9 +57,6 @@ private:
     std::atomic<bool> m_stopStatsThread;
     TamperBorderOverlay *m_tamperOverlay;
     bool m_tamperDetected{false};
-
-    std::string formatDutchDate(const std::tm &localTime);
-    std::string formatDutchTime(const std::tm &localTime);
 
     void startStatsUpdates();
     void updateSystemStats();
