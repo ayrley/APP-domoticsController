@@ -360,6 +360,7 @@ int main(void)
     g_statusLeds = &statusLeds;
 
     statusLeds.setState(StatusLeds::STATE_BOOTING);
+    EventLog::addStarting();
 
     try {
         loadIos();
@@ -424,6 +425,8 @@ int main(void)
     }
 
     lifeLed.stop();
+
+    EventLog::addStopping();
 
     return ret;
 }

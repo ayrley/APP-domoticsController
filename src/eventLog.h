@@ -18,14 +18,17 @@ public:
                              const std::string &firstName = "", const std::string &lastName = "");
     static void addOutputToggle(const std::string &outputName, bool high, const std::string &source);
     static void addTamper(bool detected);
+    static void addStarting();
+    static void addStopping();
     static void clear();
 
     static std::vector<EventLogEntry> getRecent(std::size_t limit = 200);
 
 private:
     static void append(const std::string &message);
-    static std::string nowTimestamp();
     static void appendPersistent(const EventLogEntry &entry);
+
+    static std::string nowTimestamp();
     static std::string currentWeekKey();
     static std::string persistentLogPath();
 };

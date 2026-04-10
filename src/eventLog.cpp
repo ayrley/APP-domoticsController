@@ -33,6 +33,16 @@ void EventLog::addBadgeRead(const std::string &readerName, uint64_t badge, bool 
     append("[BADGE] " + message.str());
 }
 
+void EventLog::addStarting()
+{
+    append("[SYSTEM] Starting up");
+}
+
+void EventLog::addStopping()
+{
+    append("[SYSTEM] Shutting down");
+}
+
 void EventLog::addOutputToggle(const std::string &outputName, bool high, const std::string &source)
 {
     std::stringstream message;
