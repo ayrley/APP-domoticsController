@@ -2,6 +2,7 @@
 #include "domeButton.h"
 #include "domeConfirmDialog.h"
 #include "frostPanel.h"
+#include "nestedScrollPanel.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -42,7 +43,7 @@ BadgePage::BadgePage(nanogui::Widget *parent,
     listHeader->set_font_size(17);
     listHeader->set_color(nanogui::Color(0, 200, 220, 255));
 
-    auto *listScroll = new nanogui::VScrollPanel(leftColumn);
+    auto *listScroll = new NestedScrollPanel(leftColumn);
     listScroll->set_fixed_size(nanogui::Vector2i(306, 420));
     leftColumn->setScrollTarget(listScroll);
 
@@ -92,7 +93,7 @@ BadgePage::BadgePage(nanogui::Widget *parent,
     rulesHeader->set_font_size(16);
     rulesHeader->set_color(nanogui::Color(0, 200, 220, 255));
 
-    auto *rulesScroll = new nanogui::VScrollPanel(rightColumn);
+    auto *rulesScroll = new NestedScrollPanel(rightColumn);
     rulesScroll->set_fixed_size(nanogui::Vector2i(460, 130));
 
     m_rulesListPanel = new nanogui::Widget(rulesScroll);

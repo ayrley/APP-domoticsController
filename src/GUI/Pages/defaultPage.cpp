@@ -7,6 +7,8 @@
 
 #include <nanogui/label.h>
 
+#include "debug.h"
+
 DefaultPage::DefaultPage(nanogui::Widget *parent, std::function<void()> onHome) :
     nanogui::Widget(parent)
 {
@@ -45,6 +47,38 @@ bool DefaultPage::mouse_button_event(const nanogui::Vector2i &p, int button, boo
         m_onActivity();
     }
     return Widget::mouse_button_event(p, button, down, modifiers);
+}
+
+bool DefaultPage::scroll_event(const nanogui::Vector2i &p, const nanogui::Vector2f &rel)
+{
+    if (m_scrollPanel && m_scrollPanel->contains(p) && m_scrollPanel->scroll_event(p, rel)) {
+        if (m_onActivity) {
+            m_onActivity();
+        }
+        return true;
+    }
+
+    return Widget::scroll_event(p, rel);
+}
+
+bool DefaultPage::mouse_drag_event(const nanogui::Vector2i &p, const nanogui::Vector2i &rel,
+                                   int button, int modifiers)
+{
+    if (Widget::mouse_drag_event(p, rel, button, modifiers)) {
+        return true;
+    }
+
+    if (!m_scrollPanel || !m_scrollPanel->contains(p)) {
+        return false;
+    }
+
+    if (m_contentPanel->size().y() <= m_scrollPanel->size().y()) {
+        return false;
+    }
+
+    // Touch-like drag scrolling: dragging down reveals earlier content.
+    m_scrollPanel->scroll_absolute(static_cast<float>(-rel.y()) * 3.0f);
+    return true;
 }
 
 void DefaultPage::perform_layout(NVGcontext *ctx)

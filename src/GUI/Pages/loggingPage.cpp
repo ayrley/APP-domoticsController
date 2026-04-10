@@ -2,6 +2,7 @@
 
 #include "domeButton.h"
 #include "eventLog.h"
+#include "nestedScrollPanel.h"
 
 #include <chrono>
 #include <cstdio>
@@ -10,7 +11,6 @@
 #include <nanogui/label.h>
 #include <nanogui/layout.h>
 #include <nanogui/screen.h>
-#include <nanogui/vscrollpanel.h>
 
 namespace
 {
@@ -82,7 +82,7 @@ LoggingPage::LoggingPage(nanogui::Widget *parent,
 
     setFilter(FILTER_ALL);
 
-    auto *scrollPanel = new nanogui::VScrollPanel(contentPanel());
+    auto *scrollPanel = new NestedScrollPanel(contentPanel());
     scrollPanel->set_fixed_size(nanogui::Vector2i(980, 460));
 
     m_listPanel = new nanogui::Widget(scrollPanel);

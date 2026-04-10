@@ -21,6 +21,9 @@ public:
     void perform_layout(NVGcontext *ctx) override;
     bool mouse_button_event(const nanogui::Vector2i &p, int button, bool down,
                             int modifiers) override;
+    bool scroll_event(const nanogui::Vector2i &p, const nanogui::Vector2f &rel) override;
+    bool mouse_drag_event(const nanogui::Vector2i &p, const nanogui::Vector2i &rel,
+                          int button, int modifiers) override;
     void setActivityCallback(std::function<void()> onActivity);
 
 protected:

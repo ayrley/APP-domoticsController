@@ -3,6 +3,7 @@
 #include "domeButton.h"
 #include "eventLog.h"
 #include "frostPanel.h"
+#include "nestedScrollPanel.h"
 
 #include <algorithm>
 #include <chrono>
@@ -114,7 +115,7 @@ ManualControlPage::ManualControlPage(nanogui::Widget *parent, std::function<void
     listHeader->set_font_size(17);
     listHeader->set_color(nanogui::Color(0, 200, 220, 255));
 
-    auto *listScroll = new nanogui::VScrollPanel(leftColumn);
+    auto *listScroll = new NestedScrollPanel(leftColumn);
     listScroll->set_fixed_size(nanogui::Vector2i(306, 420));
     leftColumn->setScrollTarget(listScroll);
 
