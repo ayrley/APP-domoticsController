@@ -87,6 +87,8 @@ void OsdpReaderBackend::setBaudRate(int baudRate)
 
 void OsdpReaderBackend::addReader(int address, const std::string &name)
 {
+    bool shouldStartRunner = false;
+
     osdp_pd_info_t reader = {
         .name = name.c_str(),
         .baud_rate = this->m_baudRate,
@@ -97,7 +99,16 @@ void OsdpReaderBackend::addReader(int address, const std::string &name)
         .scbk = nullptr,
     };
 
+    if (this->m_running) {
+        shouldStartRunner = true;
+        this->m_running = false;
+    }
+
     this->m_readers.push_back(reader);
+
+    if (shouldStartRunner) {
+        this->m_running = true;
+    }
 }
 
 int OsdpReaderBackend::send(void *data, uint8_t *buf, int len)
@@ -154,7 +165,9 @@ void OsdpReaderBackend::run()
     },
     this);
 
-    while (1) {
+    this->m_running = true;
+
+    while (this->m_running) {
         this->refresh();
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }

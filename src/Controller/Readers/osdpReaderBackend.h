@@ -13,7 +13,6 @@ private:
 
     std::vector<osdp_pd_info_t> m_readers;
 
-    bool m_updated;
     bool m_running;
 
     int m_baudRate;
