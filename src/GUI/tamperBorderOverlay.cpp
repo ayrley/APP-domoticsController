@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include <nanogui/common.h>
+#include <nanogui/opengl.h>
 #include <nanovg.h>
 
 TamperBorderOverlay::TamperBorderOverlay(nanogui::Widget *parent, const bool *detectedFlag)
