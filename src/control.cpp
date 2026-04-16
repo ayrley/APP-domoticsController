@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <cstdlib>
-#include <dlfcn.h>
 #include <exception>
 #include <filesystem>
 #include <fstream>
@@ -24,6 +23,7 @@
 #include "proximity.h"
 #include "accessController.h"
 #include "screen.h"
+#include "signalHandlers.h"
 #include "settings.h"
 #include "statusLeds.h"
 #include "tamperSwitch.h"
@@ -38,7 +38,7 @@ Settings *g_factorySettings = nullptr;
 StatusLeds *g_statusLeds = nullptr;
 std::vector<Badge *> *g_badges = new std::vector<Badge *>();
 std::vector<IO *> *g_ios = new std::vector<IO *>();
-std::vector<SerialBus *> *g_busses = new std::vector<SerialBus *>();
+std::vector<SerialBus *> *g_serialBusses = new std::vector<SerialBus *>();
 std::vector<Action *> *g_actions = new std::vector<Action *>();
 
 bool hasNetworkReadersConfigured()
@@ -241,7 +241,7 @@ int loadBusses()
         for (auto &singleBus : busFileObject["SerialBusses"].items()) {
             SerialBus *bus = new SerialBus();
             bus->fromJson(singleBus.value());
-            g_busses->push_back(bus);
+            g_serialBusses->push_back(bus);
         }
     }
 
@@ -285,40 +285,10 @@ bool hasDisplayServer()
     return (display != nullptr && display[0] != '\0') || (waylandDisplay != nullptr && waylandDisplay[0] != '\0');
 }
 
-bool shouldUseFramebufferGui()
-{
-    return !hasDisplayServer();
-}
-
-bool enableNullPlatformIfSupported()
-{
-    constexpr int glfwPlatformHint = 0x00050003;
-    constexpr int glfwPlatformNull = 0x00060005;
-    using GlfwPlatformSupportedFn = int (*)(int);
-
-    void *symbol = dlsym(RTLD_DEFAULT, "glfwPlatformSupported");
-    if (symbol == nullptr) {
-        ERR("GLFW runtime does not expose platform capability probing; attempting default desktop backend");
-
-        return false;
-    }
-
-    auto glfwPlatformSupportedFn = reinterpret_cast<GlfwPlatformSupportedFn>(symbol);
-    if (glfwPlatformSupportedFn(glfwPlatformNull) == GLFW_FALSE) {
-        ERR("GLFW null platform is unavailable; attempting default desktop backend");
-
-        return false;
-    }
-
-    glfwInitHint(glfwPlatformHint, glfwPlatformNull);
-
-    return true;
-}
 
 int runGui(Proximity &proximitySensor, StatusLeds &statusLeds, TamperSwitch &tamperSwitch)
 {
     int ret = 0;
-    bool useFramebufferGui = shouldUseFramebufferGui();
     std::unique_ptr<Backlight> backlight;
     int wakeBrightness = SCREENSAVER_BACKLIGHT_BRIGHTNESS;
     bool lastBacklightPresence = false;
@@ -333,15 +303,21 @@ int runGui(Proximity &proximitySensor, StatusLeds &statusLeds, TamperSwitch &tam
     }
 
     LOG("[GUI] Startup mode: "
-        << (useFramebufferGui ? "framebuffer/null platform" : "desktop window (X11/Wayland)"));
+        << (hasDisplayServer() ? "desktop window (X11/Wayland)" : "KMS/DRM framebuffer"));
 
     try {
-        if (useFramebufferGui) {
-            LOG("No display server detected; GUI will run in framebuffer/null-platform mode.");
-            enableNullPlatformIfSupported();
+        try {
+            nanogui::init();
+        } catch (const std::runtime_error &e) {
+            // NFD (native file dialog) requires a display server (GTK). When running in
+            // framebuffer mode without one, nanogui::init() throws after GLFW has already
+            // been initialised successfully. File dialogs will be unavailable, but that
+            // is acceptable in headless/framebuffer mode.
+            if (std::string(e.what()) != "Could not initialize NFD!") {
+                throw;
+            }
+            ERR("NFD unavailable (no display server); file dialogs will be disabled.");
         }
-
-        nanogui::init();
         statusLeds.setState(StatusLeds::STATE_READY);
         Screen screen(1024, 600, DIR_SHARED "badges", []() {
 			reloadBadgesCache();
@@ -401,9 +377,14 @@ int main(void)
     LifeLed lifeLed;
     TamperSwitch tamperSwitch;
     g_statusLeds = &statusLeds;
+    SignalHandlers &signalHandlers = SignalHandlers::instance();
 
     statusLeds.setState(StatusLeds::STATE_BOOTING);
     EventLog::addStarting();
+
+    if (signalHandlers.installTerminationHandlers() != 0) {
+        ERR("Failed to install termination signal handlers");
+    }
 
     try {
         loadIos();
