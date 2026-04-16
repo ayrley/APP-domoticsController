@@ -6,6 +6,13 @@ ifdef CROSS_COMPILE
 CXX := $(CROSS_COMPILE)g++
 endif
 
+# Infer toolchain prefix from CXX when CROSS_COMPILE is not explicitly provided.
+ifeq ($(strip $(CROSS_COMPILE)),)
+ifneq ($(findstring g++,$(notdir $(CXX))),)
+CROSS_COMPILE := $(patsubst %g++,%,$(CXX))
+endif
+endif
+
 BUILD_DIR := build-make
 OBJ_DIR := $(BUILD_DIR)/objNAME
 TARGET := $(BUILD_DIR)/$(NAME)
@@ -21,6 +28,8 @@ LOCAL_LIBREMOTE_STATIC := $(LOCAL_LIBREMOTE_DIR)/build/libremote.a
 LOCAL_LIBFUNCMOD_STATIC := $(LOCAL_LIBFUNCMOD_DIR)/build/libfuncmod.a
 LOCAL_NANOGUI_BUILD_DIR := $(LOCAL_NANOGUI_DIR)/build
 LOCAL_LIBOSDP_BUILD_DIR := $(LOCAL_LIBOSDP_DIR)/build
+
+CMAKE_CROSS_ARGS := $(if $(strip $(CROSS_COMPILE)),-DCMAKE_C_COMPILER=$(CROSS_COMPILE)gcc -DCMAKE_CXX_COMPILER=$(CROSS_COMPILE)g++,)
 
 THIRD_PARTY_INCLUDE_DIRS := \
 	$(HOST_DIR)/include \
@@ -51,6 +60,9 @@ THIRD_PARTY_LIB_DIRS += ../nanogui_mod/build \
 		  ../LIB-funcMod/build \
 		  ../libosdp/build/lib
 
+CXXFLAGS += -DDEBUG -O0 -g
+endif
+
 FOUND_REMOTE_HEADER := $(firstword $(foreach d,$(THIRD_PARTY_INCLUDE_DIRS),$(wildcard $(d)/LIB-remote/remoteBadgeChannel.h) $(wildcard $(d)/libremote/remoteBadgeChannel.h) $(wildcard $(d)/remoteBadgeChannel.h)))
 FOUND_FUNCMOD_HEADER := $(firstword $(foreach d,$(THIRD_PARTY_INCLUDE_DIRS),$(wildcard $(d)/LIB-funcmod/common/Path.hpp) $(wildcard $(d)/libfuncmod/common/Path.hpp) $(wildcard $(d)/common/Path.hpp)))
 FOUND_NANOGUI_HEADER := $(firstword $(foreach d,$(THIRD_PARTY_INCLUDE_DIRS),$(wildcard $(d)/nanogui/nanogui.h)))
@@ -65,6 +77,12 @@ NEED_LOCAL_LIBREMOTE := $(if $(and $(FOUND_REMOTE_HEADER),$(FOUND_REMOTE_LIB)),0
 NEED_LOCAL_LIBFUNCMOD := $(if $(and $(FOUND_FUNCMOD_HEADER),$(FOUND_FUNCMOD_LIB)),0,1)
 NEED_LOCAL_NANOGUI := $(if $(and $(FOUND_NANOGUI_HEADER),$(FOUND_NANOGUI_LIB)),0,1)
 NEED_LOCAL_LIBOSDP := $(if $(and $(FOUND_OSDP_HEADER),$(FOUND_OSDP_STATIC_LIB)),0,1)
+
+# The Buildroot-provided nanogui may not include project-required symbols.
+# For cross builds, prefer the bundled nanogui to keep headers/libs consistent.
+ifneq ($(strip $(CROSS_COMPILE)),)
+NEED_LOCAL_NANOGUI := 1
+endif
 
 OSDP_LINK_FILE := $(FOUND_OSDP_STATIC_LIB)
 ifeq ($(NEED_LOCAL_LIBOSDP),1)
@@ -115,8 +133,9 @@ INCS += -I$(LOCAL_LIBFUNCMOD_DIR)/src
 endif
 
 ifeq ($(NEED_LOCAL_NANOGUI),1)
-INCS += -I$(LOCAL_NANOGUI_DIR)/include \
-		-I$(LOCAL_NANOGUI_DIR)/ext/nanovg/src
+INCS := -I$(LOCAL_NANOGUI_DIR)/include \
+		-I$(LOCAL_NANOGUI_DIR)/ext/nanovg/src \
+		$(INCS)
 endif
 
 ifeq ($(NEED_LOCAL_LIBOSDP),1)
@@ -144,7 +163,7 @@ LIBDIR += -L$(LOCAL_LIBFUNCMOD_DIR)/build
 endif
 
 ifeq ($(NEED_LOCAL_NANOGUI),1)
-LIBDIR += -L$(LOCAL_NANOGUI_BUILD_DIR)
+LIBDIR := -L$(LOCAL_NANOGUI_BUILD_DIR) $(LIBDIR)
 endif
 
 ifeq ($(NEED_LOCAL_LIBOSDP),1)
@@ -161,10 +180,6 @@ endif
 
 ifeq ($(BUILD),release)
 CXXFLAGS += -O2
-endif
-
-
-CXXFLAGS += -DDEBUG -O0 -g
 endif
 
 .PHONY: all clean $(NAME)-linter debug release prepare-build prepare-thirdparty
@@ -186,7 +201,7 @@ $(NAME): $(TARGET)
 prepare-build: $(COMPILER_STAMP)
 
 $(COMPILER_STAMP): | $(BUILD_DIR)
-	@if [ -f $@ ] && [ "`cat $@`" != "$(CXX)" ]; then rm -rf $(OBJ_DIR) $(TARGET); fi
+	@if [ -f $@ ] && [ "`cat $@`" != "$(CXX)" ]; then rm -rf $(OBJ_DIR) $(TARGET) $(LOCAL_LIBREMOTE_DIR)/build $(LOCAL_LIBFUNCMOD_DIR)/build $(LOCAL_NANOGUI_BUILD_DIR) $(LOCAL_LIBOSDP_BUILD_DIR); fi
 	@printf '%s\n' '$(CXX)' > $@
 
 prepare-thirdparty:
@@ -200,12 +215,16 @@ prepare-thirdparty:
 	fi
 	@if [ "$(NEED_LOCAL_NANOGUI)" = "1" ] && ! ls "$(LOCAL_NANOGUI_BUILD_DIR)"/libnanogui* >/dev/null 2>&1; then \
 		echo "[deps] Building local nanogui"; \
-		cmake -S "$(LOCAL_NANOGUI_DIR)" -B "$(LOCAL_NANOGUI_BUILD_DIR)" -DCMAKE_BUILD_TYPE=$(if $(filter $(BUILD),debug),Debug,Release); \
+		cmake -S "$(LOCAL_NANOGUI_DIR)" -B "$(LOCAL_NANOGUI_BUILD_DIR)" $(CMAKE_CROSS_ARGS) -DCMAKE_BUILD_TYPE=$(if $(filter $(BUILD),debug),Debug,Release); \
 		cmake --build "$(LOCAL_NANOGUI_BUILD_DIR)"; \
+	fi
+	@if [ "$(NEED_LOCAL_LIBOSDP)" = "1" ] && [ -n "$(CROSS_COMPILE)" ] && [ -f "$(LOCAL_LIBOSDP_BUILD_DIR)/CMakeCache.txt" ] && [ -f "$(LOCAL_LIBOSDP_BUILD_DIR)/lib/libosdpstatic.a" ] && ! grep -q "CMAKE_CXX_COMPILER:FILEPATH=$(CROSS_COMPILE)g++" "$(LOCAL_LIBOSDP_BUILD_DIR)/CMakeCache.txt"; then \
+		echo "[deps] Purging local libosdp built with a different compiler"; \
+		rm -rf "$(LOCAL_LIBOSDP_BUILD_DIR)"; \
 	fi
 	@if [ "$(NEED_LOCAL_LIBOSDP)" = "1" ] && ! ls "$(LOCAL_LIBOSDP_BUILD_DIR)"/lib/libosdp* >/dev/null 2>&1; then \
 		echo "[deps] Building local libosdp"; \
-		cmake -S "$(LOCAL_LIBOSDP_DIR)" -B "$(LOCAL_LIBOSDP_BUILD_DIR)" -DOPT_OSDP_LIB_ONLY=ON -DOPT_BUILD_STATIC=ON -DOPT_BUILD_SHARED=OFF -DCMAKE_BUILD_TYPE=$(if $(filter $(BUILD),debug),Debug,Release); \
+		cmake -S "$(LOCAL_LIBOSDP_DIR)" -B "$(LOCAL_LIBOSDP_BUILD_DIR)" $(CMAKE_CROSS_ARGS) -DOPT_OSDP_LIB_ONLY=ON -DOPT_BUILD_STATIC=ON -DOPT_BUILD_SHARED=OFF -DCMAKE_BUILD_TYPE=$(if $(filter $(BUILD),debug),Debug,Release); \
 		cmake --build "$(LOCAL_LIBOSDP_BUILD_DIR)"; \
 	fi
 
