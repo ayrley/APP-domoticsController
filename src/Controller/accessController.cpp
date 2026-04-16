@@ -69,11 +69,6 @@ int AccessController::initReader()
         return 0;
     }
 
-    if (this->m_readerLocationType != RDR_LOC_LOCAL) {
-        this->reportError("Unknown reader location type");
-        return -EINVAL;
-    }
-
     if (this->m_readerProtocol == RDR_WIEGAND) {
         this->m_backend = std::make_unique<WiegandReaderBackend>(
             this->m_readerLocation,
@@ -82,7 +77,9 @@ int AccessController::initReader()
     }
 
     if (this->m_readerProtocol == RDR_OSDP) {
-        this->m_backend = std::make_unique<OsdpReaderBackend>(this->m_readerLocation);
+        this->m_backend = std::make_unique<OsdpReaderBackend>(
+            this->m_readerLocation,
+            this->m_ledDuration);
         return 0;
     }
 
@@ -142,6 +139,17 @@ ReaderDecision AccessController::onBadgeRead(uint64_t badge)
 
     if (!decision.granted)
         actionToExecute = this->m_deniedAction;
+
+    // Apply default reader feedback based on final access decision.
+    if (decision.granted) {
+        decision.led = LED_GREEN;
+        decision.buzzer = false;
+        decision.buzzerDurationMs = 0;
+    } else {
+        decision.led = LED_RED;
+        decision.buzzer = true;
+        decision.buzzerDurationMs = this->m_ledDuration;
+    }
 
     if (actionToExecute) {
         actionToExecute->execute();

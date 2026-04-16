@@ -6,12 +6,16 @@
 #include <string>
 
 #include "json.hpp"
+#include "readerTypes.h"
 
 using json = nlohmann::json;
 
 struct ReaderDecision {
     bool granted = false;
     bool antipassbackViolation = false;
+    ledColor led = LED_NONE;
+    bool buzzer = false;
+    int buzzerDurationMs = 0;
     json actionOutputs = json::array();
     std::string firstName;
     std::string lastName;

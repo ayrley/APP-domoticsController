@@ -20,7 +20,9 @@ private:
                       int length);
     int getKeypad(uint64_t *cardNumber, int count);
     int getWiegandBadge(uint64_t *badge);
-    void setWiegandLed(enum ledColor color);
+    void setWiegandFeedback(enum ledColor color,
+                            bool buzzer,
+                            int buzzerDurationMs);
 
 public:
     explicit WiegandReaderBackend(const std::string &readerLocation,

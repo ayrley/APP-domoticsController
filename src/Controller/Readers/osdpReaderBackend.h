@@ -1,39 +1,37 @@
 #ifndef __OSDP_READER_BACKEND_H_
 #define __OSDP_READER_BACKEND_H_
 
-#include <osdp.hpp>
-#include <hardware/Uart.hpp>
+#include <memory>
+#include <string>
+#include <vector>
 
+#include "osdpBus.h"
 #include "readerBackend.h"
 
-class OsdpReaderBackend : public ReaderBackend, public OSDP::ControlPanel
+class OsdpReaderBackend : public ReaderBackend
 {
 private:
-    std::string m_bus;
+    struct ReaderRegistration {
+        int address;
+        std::string name;
+    };
 
-    std::vector<osdp_pd_info_t> m_readers;
+    std::string m_busIdentifier;
+    std::vector<ReaderRegistration> m_readers;
 
-    bool m_running;
-
+    int m_ledDuration;
     int m_baudRate;
 
-    funcmod::Uart *m_uart;
+    std::shared_ptr<OsdpBus> m_bus;
 
-    osdp_channel m_channel;
+    static bool parseBusSpec(const std::string &busSpec,
+                             std::string &busIdentifier,
+                             int &readerAddress);
 
-    const BadgeReadCallback *m_onBadgeRead;
-    const ErrorCallback *m_onError;
-
-    int send(void *data, uint8_t *buf, int len);
-    int recv(void *data, uint8_t *buf, int len);
-    int event(void *data, int pd, struct osdp_event *event);
-
-    bool decodeCardReadToBadge(const osdp_event_cardread &cardRead, uint64_t &badge);
-
-    void run();
+    static std::string defaultReaderName(int address);
 
 public:
-    OsdpReaderBackend(const std::string &bus);
+    OsdpReaderBackend(const std::string &bus, int ledDuration);
 
     void run(const BadgeReadCallback &onBadgeRead,
              const ErrorCallback &onError) override;
@@ -44,7 +42,7 @@ public:
     void setBaudRate(int baudRate);
 
     int getBaudRate() const { return m_baudRate; }
-    int getReaderCount() const { return m_readers.size(); }
+    int getReaderCount() const { return static_cast<int>(m_readers.size()); }
 };
 
 #endif

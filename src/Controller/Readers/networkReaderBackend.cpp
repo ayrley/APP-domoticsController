@@ -4,6 +4,34 @@
 #include "networkReaderBackend.h"
 #include "remoteBadgeChannel.h"
 
+namespace {
+std::string toLedString(ledColor color, bool granted)
+{
+    switch (color) {
+    case LED_RED:
+        return "red";
+    case LED_GREEN:
+        return "green";
+    case LED_YELLOW:
+        return "yellow";
+    case LED_NONE:
+    default:
+        return granted ? "green" : "red";
+    }
+}
+
+json buildFeedbackOutput(const ReaderDecision &decision)
+{
+    json feedback = {
+        {"output_type", "reader_feedback"},
+        {"led", toLedString(decision.led, decision.granted)},
+        {"buzzer", decision.buzzer},
+        {"duration", decision.buzzerDurationMs}};
+
+    return feedback;
+}
+} // namespace
+
 NetworkReaderBackend::NetworkReaderBackend(const std::string &readerName,
                                            const std::string &readerLocation)
 {
@@ -24,6 +52,7 @@ void NetworkReaderBackend::run(const BadgeReadCallback &onBadgeRead,
         reply.valid = decision.granted;
         reply.badge = badge;
         reply.action = decision.actionOutputs;
+        reply.action.push_back(buildFeedbackOutput(decision));
         reply.validPayload = true;
 
         return reply;

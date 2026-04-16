@@ -113,14 +113,37 @@ int WiegandReaderBackend::getWiegandBadge(uint64_t *badge)
     return 0;
 }
 
-void WiegandReaderBackend::setWiegandLed(enum ledColor color)
+void WiegandReaderBackend::setWiegandFeedback(enum ledColor color,
+                                              bool buzzer,
+                                              int buzzerDurationMs)
 {
     std::string ledPath = "/sys/class/idtech/" + this->m_readerLocation +
                           "/device/color";
+    std::string buzzerPath = "/sys/class/idtech/" + this->m_readerLocation +
+                             "/device/buzzer";
 
-    File::writeFile(ledPath, std::to_string(color));
-    std::this_thread::sleep_for(std::chrono::milliseconds(this->m_ledDuration));
-    File::writeFile(ledPath, "0");
+    if (color != LED_NONE) {
+        File::writeFile(ledPath, std::to_string(color));
+    }
+
+    if (buzzer && File::exists(buzzerPath)) {
+        File::writeFile(buzzerPath, "1");
+    }
+
+    const int feedbackDuration = buzzerDurationMs > 0
+                                     ? buzzerDurationMs
+                                     : this->m_ledDuration;
+    if (feedbackDuration > 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(feedbackDuration));
+    }
+
+    if (color != LED_NONE) {
+        File::writeFile(ledPath, "0");
+    }
+
+    if (buzzer && File::exists(buzzerPath)) {
+        File::writeFile(buzzerPath, "0");
+    }
 }
 
 void WiegandReaderBackend::run(const BadgeReadCallback &onBadgeRead,
@@ -138,9 +161,16 @@ void WiegandReaderBackend::run(const BadgeReadCallback &onBadgeRead,
             continue;
 
         ReaderDecision decision = onBadgeRead(badge);
-        enum ledColor color = decision.granted ? LED_GREEN : LED_RED;
+        enum ledColor color = decision.led;
+        if (color == LED_NONE) {
+            color = decision.granted ? LED_GREEN : LED_RED;
+        }
 
-        std::thread ledRunner(&WiegandReaderBackend::setWiegandLed, this, color);
-        ledRunner.detach();
+        std::thread feedbackRunner(&WiegandReaderBackend::setWiegandFeedback,
+                                   this,
+                                   color,
+                                   decision.buzzer,
+                                   decision.buzzerDurationMs);
+        feedbackRunner.detach();
     }
 }
