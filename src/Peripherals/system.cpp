@@ -7,6 +7,7 @@
 #include <sys/reboot.h>
 #include <sys/statvfs.h>
 #include <unistd.h>
+#include <system/Command.hpp>
 
 System::CpuSample System::readCpuSample()
 {
@@ -188,7 +189,6 @@ void System::reboot()
 	sync();
 
 	if (::reboot(RB_AUTOBOOT) != 0) {
-		// If the syscall fails, fallback to invoking the system's reboot command
-		std::system("reboot");
-	}
+        funcMod::Command::exec("reboot");
+    }
 }
