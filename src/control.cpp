@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <csignal>
 #include <cstdlib>
 #include <exception>
 #include <filesystem>
@@ -168,6 +169,10 @@ int loadIos()
     iosStream >> iosDir;
 
     for (const auto &entry : std::filesystem::directory_iterator(iosDir)) {
+        if (!entry.is_regular_file()) {
+            continue;
+        }
+
         json ioFileObject;
         std::ifstream jsonFile(entry.path());
 
@@ -177,7 +182,7 @@ int loadIos()
         }
 
         if (jsonFile.peek() == std::ifstream::traits_type::eof()) {
-            ERR("Skipping empty IO config: " + entry.path().string());
+            LOG("Skipping empty IO config: " + entry.path().string());
             continue;
         }
 
@@ -189,7 +194,7 @@ int loadIos()
         }
 
         if (!ioFileObject.contains("IOs") || !ioFileObject["IOs"].is_array()) {
-            ERR("Skipping IO config without array 'IOs': " + entry.path().string());
+            LOG("Skipping IO config without array 'IOs': " + entry.path().string());
             continue;
         }
 
@@ -213,6 +218,10 @@ int loadBusses()
     bussesStream >> bussesDir;
 
     for (const auto &entry : std::filesystem::directory_iterator(bussesDir)) {
+        if (!entry.is_regular_file()) {
+            continue;
+        }
+
         json busFileObject;
         std::ifstream jsonFile(entry.path());
 
@@ -222,7 +231,7 @@ int loadBusses()
         }
 
         if (jsonFile.peek() == std::ifstream::traits_type::eof()) {
-            ERR("Skipping empty bus config: " + entry.path().string());
+            LOG("Skipping empty bus config: " + entry.path().string());
             continue;
         }
 
@@ -234,7 +243,7 @@ int loadBusses()
         }
 
         if (!busFileObject.contains("SerialBusses") || !busFileObject["SerialBusses"].is_array()) {
-            ERR("Skipping bus config without array 'SerialBusses': " + entry.path().string());
+            LOG("Skipping bus config without array 'SerialBusses': " + entry.path().string());
             continue;
         }
 
@@ -360,10 +369,18 @@ int runGui(Proximity &proximitySensor, StatusLeds &statusLeds, TamperSwitch &tam
         nanogui::shutdown();
     } catch (const std::exception &e) {
         ERR("GUI startup failed: " << e.what());
-        statusLeds.showError(StatusLeds::ERROR_SYSTEM);
+        ERR("Running in headless mode — access control active, no display");
+        statusLeds.setState(StatusLeds::STATE_READY);
+        proximitySensor.start();
+        tamperSwitch.start();
+        // Park here until the process is terminated by a signal.
+        sigset_t mask;
+        sigfillset(&mask);
+        sigdelset(&mask, SIGTERM);
+        sigdelset(&mask, SIGINT);
+        sigsuspend(&mask);
         proximitySensor.stop();
         tamperSwitch.stop();
-        ret = 1;
     }
 
     return ret;
