@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Start Control
+# Start Master Controller
 
 umask 077
 APPNAME=control
@@ -8,7 +8,7 @@ PIDFILE=/var/run/$APPNAME.pid
 
 start() {  
 	printf "Starting Control: "
-	start-stop-daemon --start --quiet --make-pidfile --pidfile $PIDFILE --background --exec systemctl > /tmp/system.log
+	start-stop-daemon --start --quiet --make-pidfile --pidfile $PIDFILE --background --exec control > /tmp/system.log
 	echo "OK"
 }
 
