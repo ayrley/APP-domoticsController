@@ -100,7 +100,7 @@ SRCS	:= 	$(wildcard src/*.cpp) \
 OBJS	:= $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(SRCS))
 DEPS	:= $(OBJS:.o=.d)
 		
-CXXFLAGS += -DNANOGUI_SHARED -DNVG_SHARED -DNANOGUI_USE_OPENGL
+CXXFLAGS += -DNANOGUI_USE_OPENGL
 
 INCS 	:= 	-I. \
 		-Isrc \
@@ -142,7 +142,12 @@ ifeq ($(NEED_LOCAL_LIBOSDP),1)
 INCS += -I$(LOCAL_LIBOSDP_DIR)/include
 endif
 	 	
-LIBS	:= -lnanogui \
+NANOGUI_LINK_FILE := $(FOUND_NANOGUI_LIB)
+ifeq ($(NEED_LOCAL_NANOGUI),1)
+NANOGUI_LINK_FILE := $(LOCAL_NANOGUI_BUILD_DIR)/libnanogui.a
+endif
+
+LIBS	:= $(NANOGUI_LINK_FILE) \
 			-lremote \
 			-lfuncmod \
 			$(OSDP_LINK_FILE) \
