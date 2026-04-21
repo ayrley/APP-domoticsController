@@ -75,14 +75,10 @@ FOUND_OSDP_STATIC_LIB := $(firstword $(foreach d,$(THIRD_PARTY_LIB_DIRS),$(wildc
 
 NEED_LOCAL_LIBREMOTE := $(if $(and $(FOUND_REMOTE_HEADER),$(FOUND_REMOTE_LIB)),0,1)
 NEED_LOCAL_LIBFUNCMOD := $(if $(and $(FOUND_FUNCMOD_HEADER),$(FOUND_FUNCMOD_LIB)),0,1)
-NEED_LOCAL_NANOGUI := $(if $(and $(FOUND_NANOGUI_HEADER),$(FOUND_NANOGUI_LIB)),0,1)
 NEED_LOCAL_LIBOSDP := $(if $(and $(FOUND_OSDP_HEADER),$(FOUND_OSDP_STATIC_LIB)),0,1)
 
-# The Buildroot-provided nanogui may not include project-required symbols.
-# For cross builds, prefer the bundled nanogui to keep headers/libs consistent.
-ifneq ($(strip $(CROSS_COMPILE)),)
+# Always prefer the bundled nanogui to avoid version mismatches and ensure static linking consistency
 NEED_LOCAL_NANOGUI := 1
-endif
 
 OSDP_LINK_FILE := $(FOUND_OSDP_STATIC_LIB)
 ifeq ($(NEED_LOCAL_LIBOSDP),1)
@@ -144,14 +140,21 @@ endif
 	 	
 NANOGUI_LINK_FILE := $(FOUND_NANOGUI_LIB)
 ifeq ($(NEED_LOCAL_NANOGUI),1)
-NANOGUI_LINK_FILE := $(LOCAL_NANOGUI_BUILD_DIR)/libnanogui.a
+NANOGUI_LINK_FILE := $(firstword $(wildcard $(LOCAL_NANOGUI_BUILD_DIR)/libnanogui.a) $(wildcard $(LOCAL_NANOGUI_BUILD_DIR)/libnanogui.so))
 endif
 
-LIBS	:= $(NANOGUI_LINK_FILE) \
+LIBS	:= -Wl,--whole-archive $(NANOGUI_LINK_FILE) -Wl,--no-whole-archive \
 			-lremote \
 			-lfuncmod \
 			$(OSDP_LINK_FILE) \
-			-lcrypto
+			-lcrypto \
+			-ldbus-1 \
+			-lX11 \
+			-lxkbcommon \
+			-lwayland-client \
+			-lwayland-cursor \
+			libs/nanogui/build/ext/nativefiledialog-extended/src/libnfd.a \
+			-lGL
 
 LIBDIR	:= 	-L$(HOST_DIR)/usr/lib \
 		-L$(TARGET_DIR)/usr/lib \
@@ -189,6 +192,9 @@ endif
 
 .PHONY: all clean $(NAME)-linter debug release prepare-build prepare-thirdparty
 
+REMOVE_BUILD_ARTIFACTS = $(RM) -r -f -- $(OBJ_DIR) $(TARGET)
+REMOVE_THIRDPARTY_ARTIFACTS = $(RM) -r -f -- $(LOCAL_LIBREMOTE_DIR)/build $(LOCAL_LIBFUNCMOD_DIR)/build $(LOCAL_NANOGUI_BUILD_DIR) $(LOCAL_LIBOSDP_BUILD_DIR)
+
 all: $(TARGET)
 
 debug:
@@ -204,9 +210,11 @@ $(NAME): $(TARGET)
 	@echo "Built $(TARGET)"
 
 prepare-build: $(COMPILER_STAMP)
+	@if [ -n "$(CROSS_COMPILE)" ]; then $(REMOVE_BUILD_ARTIFACTS); fi
 
 $(COMPILER_STAMP): | $(BUILD_DIR)
-	@if [ -f $@ ] && [ "`cat $@`" != "$(CXX)" ]; then rm -rf $(OBJ_DIR) $(TARGET) $(LOCAL_LIBREMOTE_DIR)/build $(LOCAL_LIBFUNCMOD_DIR)/build $(LOCAL_NANOGUI_BUILD_DIR) $(LOCAL_LIBOSDP_BUILD_DIR); fi
+	@if [ ! -f $@ ]; then $(REMOVE_BUILD_ARTIFACTS); fi
+	@if [ -f $@ ] && [ "`cat $@`" != "$(CXX)" ]; then $(REMOVE_BUILD_ARTIFACTS); $(REMOVE_THIRDPARTY_ARTIFACTS); fi
 	@printf '%s\n' '$(CXX)' > $@
 
 prepare-thirdparty:
@@ -218,9 +226,13 @@ prepare-thirdparty:
 		echo "[deps] Building local libfuncmod"; \
 		$(MAKE) -C "$(LOCAL_LIBFUNCMOD_DIR)" BUILD=$(BUILD) CROSS_COMPILE=$(CROSS_COMPILE) static; \
 	fi
+	@if [ "$(NEED_LOCAL_NANOGUI)" = "1" ] && [ -n "$(CROSS_COMPILE)" ] && [ -f "$(LOCAL_NANOGUI_BUILD_DIR)/CMakeCache.txt" ] && [ -f "$(LOCAL_NANOGUI_BUILD_DIR)/libnanogui.a" ] && ! grep -q "CMAKE_CXX_COMPILER:FILEPATH=$(CROSS_COMPILE)g++" "$(LOCAL_NANOGUI_BUILD_DIR)/CMakeCache.txt"; then \
+		echo "[deps] Purging local nanogui built with a different compiler"; \
+		rm -rf "$(LOCAL_NANOGUI_BUILD_DIR)"; \
+	fi
 	@if [ "$(NEED_LOCAL_NANOGUI)" = "1" ] && ! ls "$(LOCAL_NANOGUI_BUILD_DIR)"/libnanogui* >/dev/null 2>&1; then \
 		echo "[deps] Building local nanogui"; \
-		cmake -S "$(LOCAL_NANOGUI_DIR)" -B "$(LOCAL_NANOGUI_BUILD_DIR)" $(CMAKE_CROSS_ARGS) -DCMAKE_BUILD_TYPE=$(if $(filter $(BUILD),debug),Debug,Release); \
+		cmake -S "$(LOCAL_NANOGUI_DIR)" -B "$(LOCAL_NANOGUI_BUILD_DIR)" $(CMAKE_CROSS_ARGS) -DNANOGUI_BUILD_SHARED=OFF -DCMAKE_BUILD_TYPE=$(if $(filter $(BUILD),debug),Debug,Release); \
 		cmake --build "$(LOCAL_NANOGUI_BUILD_DIR)"; \
 	fi
 	@if [ "$(NEED_LOCAL_LIBOSDP)" = "1" ] && [ -n "$(CROSS_COMPILE)" ] && [ -f "$(LOCAL_LIBOSDP_BUILD_DIR)/CMakeCache.txt" ] && [ -f "$(LOCAL_LIBOSDP_BUILD_DIR)/lib/libosdpstatic.a" ] && ! grep -q "CMAKE_CXX_COMPILER:FILEPATH=$(CROSS_COMPILE)g++" "$(LOCAL_LIBOSDP_BUILD_DIR)/CMakeCache.txt"; then \
@@ -233,11 +245,11 @@ prepare-thirdparty:
 		cmake --build "$(LOCAL_LIBOSDP_BUILD_DIR)"; \
 	fi
 
-$(TARGET): prepare-build prepare-thirdparty $(OBJS) | $(BUILD_DIR)
+$(TARGET): $(OBJS) | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $(OBJS) $(LDFLAGS) $(LIBDIR) $(LIBS)
 	ln -sf $(TARGET) $(NAME)
 
-$(OBJ_DIR)/%.o: %.cpp
+$(OBJ_DIR)/%.o: %.cpp prepare-build prepare-thirdparty | $(BUILD_DIR)
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -fPIC $(INCS) -MMD -MP -c $< -o $@
 
