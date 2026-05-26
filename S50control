@@ -5,39 +5,113 @@
 umask 077
 APPNAME=control
 PIDFILE=/var/run/$APPNAME.pid
+RUNDIR=/run/xdg
+WAYLAND_SOCK=wayland-0
 
-start() {  
-	printf "Starting Control: "
-	start-stop-daemon --start --quiet --make-pidfile --pidfile $PIDFILE --background --exec control > /tmp/system.log
-	echo "OK"
+prepare_gui_env() {
+# GLFW/Wayland requires a valid runtime dir.
+mkdir -p "$RUNDIR"
+chmod 0700 "$RUNDIR"
+export XDG_RUNTIME_DIR="$RUNDIR"
+echo "[S50control] XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR" >&2
+
+if [ -x /usr/bin/weston ] || command -v weston >/dev/null 2>&1; then
+echo "[S50control] weston found in PATH" >&2
+if ! pgrep -x weston >/dev/null 2>&1; then
+echo "[S50control] Starting weston..." >&2
+# Use weston's default backend selection (configured as DRM in Buildroot).
+/usr/bin/weston --socket="$WAYLAND_SOCK" --idle-time=0 --continue-without-input --use-pixman >/tmp/weston.log 2>&1 &
+
+# Wait up to 15 seconds for the socket.
+_waited=0
+while [ "$_waited" -lt 15 ]; do
+if [ -S "$RUNDIR/$WAYLAND_SOCK" ]; then
+echo "[S50control] Weston socket ready: $RUNDIR/$WAYLAND_SOCK" >&2
+break
+fi
+sleep 1
+_waited=$((_waited + 1))
+done
+
+if [ ! -S "$RUNDIR/$WAYLAND_SOCK" ]; then
+echo "[S50control] ERROR: Weston socket not ready after ${_waited}s" >&2
+tail -n 40 /tmp/weston.log >&2
+fi
+fi
+
+export WAYLAND_DISPLAY="$WAYLAND_SOCK"
+echo "[S50control] WAYLAND_DISPLAY=$WAYLAND_DISPLAY" >&2
+else
+echo "[S50control] weston not found in PATH" >&2
+fi
+}
+
+prepare_hardware_stubs() {
+# In QEMU there is no real WIEGAND reader. Create a stub so the
+# reader thread can open the device without crashing on ENOENT.
+if [ ! -e /dev/idtreader_1 ]; then
+    # Try socat first (creates a functional PTY pair)
+    if [ -x /usr/bin/socat ]; then
+        /usr/bin/socat PTY,link=/dev/idtreader_1,raw,echo=0 PTY,raw,echo=0 \
+            >/tmp/idtreader1.log 2>&1 &
+        sleep 1  # Give socat time to create the PTY
+        echo "[S50control] Created socat PTY stub for /dev/idtreader_1 (QEMU mock)" >&2
+    else
+        # Fallback: create symlink to /dev/null (always readable, returns EOF)
+        ln -sf /dev/null /dev/idtreader_1 2>/dev/null || true
+        echo "[S50control] Linked /dev/idtreader_1 -> /dev/null (QEMU mock, minimal fallback)" >&2
+    fi
+fi
+}
+
+start() {
+printf "Starting Control: "
+
+cp -a /etc/controller/badges/ /mnt/data/badges
+cp -a /etc/controller/ios/ /mnt/data/ios
+
+prepare_hardware_stubs
+prepare_gui_env
+
+# Pass env explicitly through the daemon shell.
+_xdg="${XDG_RUNTIME_DIR:-/tmp/xdg-runtime-control}"
+_wld="${WAYLAND_DISPLAY:-}"
+echo "[S50control] Launching control with XDG_RUNTIME_DIR=$_xdg WAYLAND_DISPLAY=$_wld" >&2
+
+start-stop-daemon --start --quiet --make-pidfile --pidfile "$PIDFILE" \
+--background --startas /bin/sh -- \
+-c "export XDG_RUNTIME_DIR=\"$_xdg\" WAYLAND_DISPLAY=\"$_wld\" LIBGL_ALWAYS_SOFTWARE=1 MESA_LOADER_DRIVER_OVERRIDE=swrast; exec control" \
+>> /tmp/system.log 2>&1
+echo "OK"
 }
 
 stop() {
-	printf "Stopping Control: "
-	if [ -f /var/run/$APPNAME.pid ]; then
-		start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PIDFILE
-	fi
-	echo "OK"
+printf "Stopping Control: "
+if [ -f "$PIDFILE" ]; then
+start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile "$PIDFILE"
+fi
+echo "OK"
 }
 
-restart() {     
-	stop
-	start
+restart() {
+stop
+start
 }
 
 case "$1" in
-  start)
-	start
-	;;
-  stop)
-	stop
-	;;
-  restart|reload)
-	restart
-	;;
-  *)
-	echo "Usage: $0 {start|stop|restart}"
-	exit 1
+start)
+start
+;;
+stop)
+stop
+;;
+restart|reload)
+restart
+;;
+*)
+echo "Usage: $0 {start|stop|restart}"
+exit 1
+;;
 esac
 
 exit $?

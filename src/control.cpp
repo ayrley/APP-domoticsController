@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <chrono>
 #include <csignal>
 #include <cstdlib>
 #include <exception>
@@ -6,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <sys/stat.h>
 #include <string>
 #include <thread>
 #include <vector>
@@ -294,6 +296,73 @@ bool hasDisplayServer()
     return (display != nullptr && display[0] != '\0') || (waylandDisplay != nullptr && waylandDisplay[0] != '\0');
 }
 
+void ensureGuiRuntimeEnvironment()
+{
+    const char *xdgRuntime = std::getenv("XDG_RUNTIME_DIR");
+    if (xdgRuntime == nullptr || xdgRuntime[0] == '\0') {
+        const char *fallbackRuntime = "/tmp/xdg-runtime-control";
+        mkdir(fallbackRuntime, 0700);
+        chmod(fallbackRuntime, 0700);
+        setenv("XDG_RUNTIME_DIR", fallbackRuntime, 1);
+        LOG("[GUI] XDG_RUNTIME_DIR was missing; using " << fallbackRuntime);
+        xdgRuntime = std::getenv("XDG_RUNTIME_DIR");
+    }
+
+    const char *glfwPlatform = std::getenv("GLFW_PLATFORM");
+    if (glfwPlatform == nullptr || glfwPlatform[0] == '\0') {
+        const char *waylandDisplay = std::getenv("WAYLAND_DISPLAY");
+        const char *x11Display = std::getenv("DISPLAY");
+
+        // Neither display server available — attempt to self-start weston.
+        if ((waylandDisplay == nullptr || waylandDisplay[0] == '\0') &&
+            (x11Display    == nullptr || x11Display[0]    == '\0')) {
+
+            if (std::system("test -x /usr/bin/weston || command -v weston >/dev/null 2>&1") == 0) {
+                LOG("[GUI] No display server found; attempting to start weston...");
+
+                // Check if weston is already running before spawning a new one.
+                if (std::system("pgrep -x weston >/dev/null 2>&1") != 0) {
+                    std::system("/usr/bin/weston --socket=wayland-0 "
+                                "--idle-time=0 --continue-without-input --use-pixman >>/tmp/weston.log 2>&1 &");
+                }
+
+                // Wait for the Wayland socket to appear (up to 10 s).
+                const std::string socketPath = std::string(xdgRuntime) + "/wayland-0";
+                for (int i = 0; i < 10; ++i) {
+                    struct stat st{};
+                    if (stat(socketPath.c_str(), &st) == 0 && S_ISSOCK(st.st_mode)) {
+                        setenv("WAYLAND_DISPLAY", "wayland-0", 1);
+                        LOG("[GUI] weston socket ready; WAYLAND_DISPLAY=wayland-0");
+                        break;
+                    }
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                }
+
+                if (std::getenv("WAYLAND_DISPLAY") == nullptr) {
+                    ERR("[GUI] weston socket not ready after 10 s; will try without Wayland");
+                }
+            }
+
+            waylandDisplay = std::getenv("WAYLAND_DISPLAY");
+        }
+
+        if (waylandDisplay != nullptr && waylandDisplay[0] != '\0') {
+            setenv("GLFW_PLATFORM", "wayland", 0);
+        } else if (x11Display != nullptr && x11Display[0] != '\0') {
+            setenv("GLFW_PLATFORM", "x11", 0);
+        }
+
+    }
+    // QEMU/embedded: force Mesa software renderer when no DRI render node is available.
+    // This covers virtio-gpu without virgl and any target where /dev/dri/renderD128
+    // does not exist.  Wayland EGL still works via weston on top of pixman/scanout.
+    if (std::getenv("LIBGL_ALWAYS_SOFTWARE") == nullptr) {
+        setenv("LIBGL_ALWAYS_SOFTWARE", "1", 1);
+        setenv("MESA_LOADER_DRIVER_OVERRIDE", "swrast", 1);
+        LOG("[GUI] No DRI render node detected; using Mesa software renderer");
+    }
+}
+
 
 int runGui(Proximity &proximitySensor, StatusLeds &statusLeds, TamperSwitch &tamperSwitch)
 {
@@ -313,6 +382,8 @@ int runGui(Proximity &proximitySensor, StatusLeds &statusLeds, TamperSwitch &tam
 
     LOG("[GUI] Startup mode: "
         << (hasDisplayServer() ? "desktop window (X11/Wayland)" : "KMS/DRM framebuffer"));
+
+    ensureGuiRuntimeEnvironment();
 
     try {
         try {
